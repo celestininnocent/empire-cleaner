@@ -14,6 +14,8 @@ import {
 } from "@/lib/crew-job-sms";
 import { normalizeAddOnIds } from "@/lib/add-ons";
 import { resolveOrCreateUserForPaidBooking } from "@/lib/checkout/resolve-guest-user";
+import { approximateLatLngFromZip } from "@/lib/geo";
+import { geocodeAddressLine } from "@/lib/geocode-google";
 
 function serviceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -142,8 +144,6 @@ export async function POST(request: Request) {
 
     const stripeCustomerId =
       typeof session.customer === "string" ? session.customer : null;
-    const lat = null;
-    const lng = null;
 
     let customerId: string | null = null;
     const existing = await admin
@@ -170,8 +170,8 @@ export async function POST(request: Request) {
           address_line: meta.address,
           city: meta.city,
           state: meta.state,
-          lat,
-          lng,
+          lat: null,
+          lng: null,
         })
         .select("id")
         .single();
@@ -186,8 +186,27 @@ export async function POST(request: Request) {
     }
 
     const priceCents = parseInt(meta.price_cents ?? "0", 10) || 0;
-    const zip = meta.zip ?? "00000";
-    const jobCoords = { zip, lat, lng };
+    const zipTrim = typeof meta.zip === "string" ? meta.zip.trim() : "";
+    const zip = zipTrim.length ? zipTrim : "00000";
+
+    let jobLat: number | null = null;
+    let jobLng: number | null = null;
+    const geocoded = await geocodeAddressLine({
+      address: meta.address,
+      city: meta.city,
+      state: meta.state,
+      zip: meta.zip,
+    });
+    if (geocoded) {
+      jobLat = geocoded.lat;
+      jobLng = geocoded.lng;
+    } else if (zip.replace(/\D/g, "").length >= 5) {
+      const approx = approximateLatLngFromZip(zip);
+      jobLat = approx.lat;
+      jobLng = approx.lng;
+    }
+
+    const jobCoords = { zip, lat: jobLat, lng: jobLng };
 
     const { data: teamsRaw } = await admin.from("teams").select("*");
     const teams = (teamsRaw ?? []) as TeamRow[];
@@ -256,8 +275,8 @@ export async function POST(request: Request) {
         city: meta.city,
         state: meta.state,
         zip,
-        lat,
-        lng,
+        lat: jobLat,
+        lng: jobLng,
         stripe_checkout_session_id: session.id,
         add_on_ids: addOnIds,
         customer_notes: (() => {

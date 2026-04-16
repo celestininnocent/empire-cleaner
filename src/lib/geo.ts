@@ -1,3 +1,13 @@
+/** Fallback map centroid when ZIP cannot be parsed (not SF-specific). */
+export function defaultServiceMapCenter(): { lat: number; lng: number } {
+  const lat = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LAT ?? "45.5231");
+  const lng = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LNG ?? "-122.6765");
+  return {
+    lat: Number.isFinite(lat) ? lat : 45.5231,
+    lng: Number.isFinite(lng) ? lng : -122.6765,
+  };
+}
+
 /** Great-circle distance in miles (WGS84 sphere). */
 
 export function haversineMiles(
@@ -25,9 +35,9 @@ export function haversineMiles(
 export function approximateLatLngFromZip(zip: string): { lat: number; lng: number } {
   const digits = zip.replace(/\D/g, "");
   const five = (digits.length >= 5 ? digits.slice(0, 5) : digits.padStart(5, "0")).slice(0, 5);
-  const z = parseInt(five, 10);
+   const z = parseInt(five, 10);
   if (!Number.isFinite(z)) {
-    return { lat: 37.7749, lng: -122.4194 };
+    return defaultServiceMapCenter();
   }
   const lat = 24.5 + ((z * 9301 + 49297) % 233_280) / 233_280 * 25;
   const lng = -124.85 + ((z * 49297 + 9301) % 233_280) / 233_280 * 57;

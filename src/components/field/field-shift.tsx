@@ -44,6 +44,7 @@ import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-goo
 import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
+import { approximateLatLngFromZip, defaultServiceMapCenter } from "@/lib/geo";
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
@@ -93,6 +94,26 @@ type JobRow = {
   service_tier?: string | null;
   customer_notes?: string | null;
 };
+
+function jobStopMapCenter(
+  job: JobRow,
+  teamBase: { lat: number; lng: number } | null
+): { lat: number; lng: number } {
+  if (
+    job.lat != null &&
+    job.lng != null &&
+    Number.isFinite(Number(job.lat)) &&
+    Number.isFinite(Number(job.lng))
+  ) {
+    return { lat: Number(job.lat), lng: Number(job.lng) };
+  }
+  const z = job.zip?.trim();
+  if (z && z.replace(/\D/g, "").length >= 5) {
+    return approximateLatLngFromZip(z);
+  }
+  if (teamBase) return teamBase;
+  return defaultServiceMapCenter();
+}
 
 type ClaimableJobRow = {
   id: string;
@@ -192,6 +213,13 @@ export function FieldShift({
 
   const items = checklist.filter((c) => c.job_id === activeJobId);
   const activeJob = routeJobs.find((j) => j.id === activeJobId);
+
+  const stopMapCenter = useMemo(
+    () => (activeJob ? jobStopMapCenter(activeJob, teamBase ?? null) : null),
+    [activeJob, teamBase]
+  );
+
+  const baseMapCenter = useMemo(() => teamBase ?? defaultServiceMapCenter(), [teamBase]);
 
   const approxMiles =
     routeOptimization?.optimizerAvailable && routeOptimization
@@ -557,29 +585,34 @@ export function FieldShift({
               ) : null}
             </CardHeader>
             <CardContent className="space-y-3">
-              {mapKey && activeJob.lat != null && activeJob.lng != null ? (
+              {mapKey && stopMapCenter ? (
                 <APIProvider apiKey={mapKey}>
                   <div className="h-48 overflow-hidden rounded-xl border border-border/80">
                     <GoogleMap
-                      defaultCenter={{ lat: activeJob.lat, lng: activeJob.lng }}
+                      key={`job-${activeJob.id}-${stopMapCenter.lat.toFixed(4)}-${stopMapCenter.lng.toFixed(4)}`}
+                      defaultCenter={stopMapCenter}
                       defaultZoom={14}
                       mapId="empire-cleaner-field"
                       gestureHandling="greedy"
                     >
-                      <AdvancedMarker
-                        position={{ lat: activeJob.lat, lng: activeJob.lng }}
-                      >
+                      <AdvancedMarker position={stopMapCenter}>
                         <div className="size-3 rounded-full border-2 border-white bg-amber-500 shadow-md" />
                       </AdvancedMarker>
                     </GoogleMap>
                   </div>
                 </APIProvider>
-              ) : (
+              ) : !mapKey ? (
                 <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/30 text-sm text-muted-foreground">
                   <MapIcon className="mr-2 size-4" />
                   Add a Maps API key for turn-by-turn context.
                 </div>
-              )}
+              ) : null}
+              {activeJob.lat == null || activeJob.lng == null ? (
+                <p className="text-xs text-muted-foreground">
+                  If the pin looks rough, it is from the job ZIP until we store a street-level
+                  coordinate (new bookings geocode when your Maps key allows it).
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -597,10 +630,10 @@ export function FieldShift({
                     "Share GPS with dispatch"
                   )}
                 </Button>
-                {activeJob.lat != null && activeJob.lng != null ? (
+                {stopMapCenter ? (
                   <a
                     className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${activeJob.lat},${activeJob.lng}`}
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${stopMapCenter.lat},${stopMapCenter.lng}`}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -803,7 +836,7 @@ export function FieldShift({
               {crewAssignmentReady ? siteConfig.fieldNoRouteCardBody : siteConfig.fieldPendingCrewCardBody}
             </CardDescription>
           </CardHeader>
-          {mapKey && teamBase ? (
+          {mapKey ? (
             <CardContent className="pt-0">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
@@ -812,12 +845,13 @@ export function FieldShift({
                 <APIProvider apiKey={mapKey}>
                   <div className="h-52 overflow-hidden rounded-xl border border-border/80">
                     <GoogleMap
-                      defaultCenter={{ lat: teamBase.lat, lng: teamBase.lng }}
+                      key={`base-${baseMapCenter.lat.toFixed(4)}-${baseMapCenter.lng.toFixed(4)}`}
+                      defaultCenter={baseMapCenter}
                       defaultZoom={11}
                       mapId="empire-cleaner-field-empty"
                       gestureHandling="greedy"
                     >
-                      <AdvancedMarker position={{ lat: teamBase.lat, lng: teamBase.lng }}>
+                      <AdvancedMarker position={baseMapCenter}>
                         <div className="size-3 rounded-full border-2 border-white bg-sky-500 shadow-md" />
                       </AdvancedMarker>
                     </GoogleMap>
