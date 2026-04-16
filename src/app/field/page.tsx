@@ -42,6 +42,18 @@ function parseClaimCrewResult(raw: unknown): ClaimCrewResult | null {
   return null;
 }
 
+async function loadCleanerRow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  const { data } = await supabase
+    .from("cleaners")
+    .select("id, team_id, bio, photo_url, teams(base_lat, base_lng, zip_code)")
+    .eq("profile_id", userId)
+    .maybeSingle();
+  return data;
+}
+
 export default async function FieldPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return (
@@ -78,11 +90,15 @@ export default async function FieldPage() {
 
   const claim = parseClaimCrewResult(claimRaw);
 
-  const { data: cleaner } = await supabase
-    .from("cleaners")
-    .select("id, team_id, bio, photo_url, teams(base_lat, base_lng, zip_code)")
-    .eq("profile_id", user.id)
-    .maybeSingle();
+  let cleaner = await loadCleanerRow(supabase, user.id);
+
+  if (!cleaner?.team_id && claim?.ok === true && claim?.linked) {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      cleaner = await loadCleanerRow(supabase, user.id);
+      if (cleaner?.team_id) break;
+    }
+  }
 
   const rawTeam = cleaner?.teams as
     | { base_lat: number | null; base_lng: number | null; zip_code: string | null }
