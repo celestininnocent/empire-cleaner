@@ -37,11 +37,20 @@ export function pickNearestTeam(
   if (!available.length) return null;
 
   if (job.lat == null || job.lng == null) {
-    return (
-      [...available].sort(
-        (a, b) => (a.workload_count ?? 0) - (b.workload_count ?? 0)
-      )[0] ?? null
-    );
+    const jobKey = normalizeZipKey(job.zip);
+    let best: TeamDispatchCandidate | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+    for (const t of available) {
+      const tz = normalizeZipKey(t.zip_code);
+      const workloadPenalty = (t.workload_count ?? 0) * 1.75;
+      const zipBonus = jobKey != null && tz != null && jobKey === tz ? 2.5 : 0;
+      const score = workloadPenalty - zipBonus;
+      if (score < bestScore) {
+        bestScore = score;
+        best = t;
+      }
+    }
+    return best;
   }
 
   const jobKey = normalizeZipKey(job.zip);

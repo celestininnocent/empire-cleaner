@@ -164,7 +164,7 @@ export async function approveApplicantForCrewAction(
   }
 
   await ensureDefaultTeamExists(sb);
-  const { data: teamRows } = await sb.from("teams").select("id, zip_code, base_lat, base_lng");
+  const { data: teamRows } = await sb.from("teams").select("id, zip_code");
   const teams = teamRows ?? [];
 
   const zipForMatch = await zipForCrewResolution(sb, app);

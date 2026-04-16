@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-google-maps";
-import { approximateLatLngFromZip } from "@/lib/geo";
 
 export type MapJob = {
   id: string;
@@ -20,8 +19,12 @@ export type MapTeam = {
   name: string;
 };
 
-const fallbackZip = (process.env.NEXT_PUBLIC_DEFAULT_SERVICE_ZIP ?? "97209").trim();
-const defaultCenter = approximateLatLngFromZip(fallbackZip);
+const fallbackLat = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LAT ?? "45.5231");
+const fallbackLng = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LNG ?? "-122.6765");
+const defaultCenter = {
+  lat: Number.isFinite(fallbackLat) ? fallbackLat : 45.5231,
+  lng: Number.isFinite(fallbackLng) ? fallbackLng : -122.6765,
+};
 
 export function DispatchMap({
   jobs,

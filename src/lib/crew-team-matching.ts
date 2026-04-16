@@ -26,13 +26,9 @@
  * geographically sane while **people** use ZIP + explicit owner choices above.
  */
 
-import { approximateLatLngFromZip, haversineMiles } from "@/lib/geo";
-
 export type TeamZipRow = {
   id: string;
   zip_code: string;
-  base_lat?: number | null;
-  base_lng?: number | null;
 };
 
 export type CrewAssignmentReason =
@@ -40,7 +36,7 @@ export type CrewAssignmentReason =
   | "stored_applicant"
   | "single_crew"
   | "zip"
-  | "zip_nearest"
+  | "zip_close"
   | "fallback"
   | "none";
 
@@ -71,40 +67,28 @@ export function matchTeamIdByApplicantZip(
   return matches[0]!.id;
 }
 
-/**
- * If no exact ZIP team exists, pick the geographically nearest team base to the ZIP centroid.
- */
-export function matchNearestTeamIdByApplicantZip(
+/** If no exact ZIP team exists, pick closest team ZIP numerically (same country/format). */
+export function matchClosestTeamIdByApplicantZip(
   applicantZip: string | null | undefined,
   teams: TeamZipRow[]
 ): string | undefined {
   const nz = normalizeZipKey(applicantZip);
   if (!nz || teams.length === 0) return undefined;
-  const target = approximateLatLngFromZip(nz);
+  const target = Number.parseInt(nz, 10);
+  if (!Number.isFinite(target)) return undefined;
 
-  const candidates = teams.filter(
-    (t) =>
-      t.base_lat != null &&
-      t.base_lng != null &&
-      Number.isFinite(Number(t.base_lat)) &&
-      Number.isFinite(Number(t.base_lng))
-  );
-  if (candidates.length === 0) return undefined;
-
-  let bestId: string | undefined;
-  let bestDist = Number.POSITIVE_INFINITY;
-
-  for (const t of candidates) {
-    const dist = haversineMiles(target.lat, target.lng, Number(t.base_lat), Number(t.base_lng));
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestId = t.id;
-    } else if (dist === bestDist && bestId && t.id.localeCompare(bestId) < 0) {
-      bestId = t.id;
+  let best: { id: string; delta: number } | null = null;
+  for (const t of teams) {
+    const tz = normalizeZipKey(t.zip_code);
+    if (!tz) continue;
+    const n = Number.parseInt(tz, 10);
+    if (!Number.isFinite(n)) continue;
+    const delta = Math.abs(target - n);
+    if (!best || delta < best.delta || (delta === best.delta && t.id.localeCompare(best.id) < 0)) {
+      best = { id: t.id, delta };
     }
   }
-
-  return bestId;
+  return best?.id;
 }
 
 /**
@@ -156,9 +140,9 @@ export function resolveCrewTeamAssignment(
     return { teamId: byZip, reason: "zip" };
   }
 
-  const nearZip = matchNearestTeamIdByApplicantZip(input.serviceZip, teams);
-  if (nearZip) {
-    return { teamId: nearZip, reason: "zip_nearest" };
+  const closeZip = matchClosestTeamIdByApplicantZip(input.serviceZip, teams);
+  if (closeZip) {
+    return { teamId: closeZip, reason: "zip_close" };
   }
 
   const fb = pickFallbackTeamId(teams);

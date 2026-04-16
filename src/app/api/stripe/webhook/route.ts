@@ -7,7 +7,6 @@ import {
   type TeamDispatchCandidate,
   type TeamRow,
 } from "@/lib/dispatch";
-import { approximateLatLngFromZip } from "@/lib/geo";
 import { DEFAULT_ROOMS } from "@/lib/checklist";
 import {
   notifyCrewMembersJobAssigned,
@@ -143,7 +142,8 @@ export async function POST(request: Request) {
 
     const stripeCustomerId =
       typeof session.customer === "string" ? session.customer : null;
-    const { lat, lng } = approximateLatLngFromZip(meta.zip ?? "00000");
+    const lat = null;
+    const lng = null;
 
     let customerId: string | null = null;
     const existing = await admin
