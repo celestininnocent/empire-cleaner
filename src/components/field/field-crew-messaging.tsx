@@ -45,9 +45,10 @@ export function FieldCrewMessaging({ teamId }: { teamId: string | null }) {
 
     if (e) {
       const msg = e.message ?? "";
+      const missingTable = /relation|does not exist|schema cache/i.test(msg);
       setError(
-        /relation|does not exist|schema cache/i.test(msg)
-          ? "Team messages aren’t available until the database migration for crew messages is applied."
+        missingTable
+          ? "Crew team chat isn’t enabled in your database yet. In Supabase → SQL Editor, run the migration `supabase/migrations/009_crew_dispatch_messages.sql` from this project, then wait a minute or use Dashboard → Settings → API to refresh the schema cache if the table already exists."
           : msg
       );
       setRows([]);
