@@ -11,6 +11,7 @@ import {
   linkUserToCrewTeam,
   linkUserToCrewTeamWhenReady,
 } from "@/lib/crew-sync";
+import { isSmsConfigured, normalizeUsPhoneToE164, sendSms } from "@/lib/sms";
 
 async function zipForCrewResolution(
   sb: SupabaseClient,
@@ -40,6 +41,29 @@ function serviceDb() {
 async function requireAdmin() {
   const { user } = await requireAdminUser();
   return user;
+}
+
+async function notifyApplicantAccessGranted(input: {
+  phone: string | null | undefined;
+  fullName: string;
+  role: "cleaner" | "admin";
+  mode: "linked" | "invited";
+}) {
+  if (!isSmsConfigured()) return;
+  const to = input.phone?.trim() ? normalizeUsPhoneToE164(input.phone) : null;
+  if (!to) return;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const targetPath = input.role === "admin" ? "/admin" : "/field";
+  const roleLabel = input.role === "admin" ? "owner" : "crew";
+  const actionText =
+    input.mode === "invited"
+      ? "Check your invite email, then sign in"
+      : "Sign in";
+  const body = `${input.fullName}, your ${roleLabel} app access is ready. ${actionText}: ${appUrl}${targetPath}`;
+  const result = await sendSms(to, body);
+  if (!result.ok) {
+    console.error("[hiring] access-granted SMS failed:", result.error);
+  }
 }
 
 export async function insertApplicantAction(input: {
@@ -206,6 +230,12 @@ export async function approveApplicantForCrewAction(
   if (existing) {
     await linkUserToCrewTeam(existing.id, resolvedTeamId);
     await syncProfileFromApplicant(existing.id, app.phone);
+    await notifyApplicantAccessGranted({
+      phone: app.phone,
+      fullName: app.full_name,
+      role: "cleaner",
+      mode: "linked",
+    });
 
     revalidatePath("/admin/hiring");
     return {
@@ -230,6 +260,12 @@ export async function approveApplicantForCrewAction(
     if (late) {
       await linkUserToCrewTeam(late.id, resolvedTeamId);
       await syncProfileFromApplicant(late.id, app.phone);
+      await notifyApplicantAccessGranted({
+        phone: app.phone,
+        fullName: app.full_name,
+        role: "cleaner",
+        mode: "linked",
+      });
       revalidatePath("/admin/hiring");
       return {
         mode: "linked",
@@ -251,6 +287,12 @@ export async function approveApplicantForCrewAction(
       console.error("[hiring] post-invite crew link:", e);
     }
   }
+  await notifyApplicantAccessGranted({
+    phone: app.phone,
+    fullName: app.full_name,
+    role: "cleaner",
+    mode: "invited",
+  });
 
   revalidatePath("/admin/hiring");
   return {
@@ -271,7 +313,7 @@ export async function approveApplicantAsOwnerAction(
   const sb = serviceDb();
   const { data: app, error: fetchErr } = await sb
     .from("applicants")
-    .select("id, email, full_name")
+    .select("id, email, full_name, phone")
     .eq("id", applicantId)
     .single();
 
@@ -321,6 +363,12 @@ export async function approveApplicantAsOwnerAction(
     await ensureOwnerProfile(existing.id);
 
     await sb.from("cleaners").delete().eq("profile_id", existing.id);
+    await notifyApplicantAccessGranted({
+      phone: app.phone,
+      fullName,
+      role: "admin",
+      mode: "linked",
+    });
 
     revalidatePath("/admin/hiring");
     return {
@@ -341,6 +389,12 @@ export async function approveApplicantAsOwnerAction(
     if (late) {
       await ensureOwnerProfile(late.id);
       await sb.from("cleaners").delete().eq("profile_id", late.id);
+      await notifyApplicantAccessGranted({
+        phone: app.phone,
+        fullName,
+        role: "admin",
+        mode: "linked",
+      });
       revalidatePath("/admin/hiring");
         return {
           mode: "linked",
@@ -351,6 +405,13 @@ export async function approveApplicantAsOwnerAction(
       }
     throw new Error(invErr.message);
   }
+
+  await notifyApplicantAccessGranted({
+    phone: app.phone,
+    fullName,
+    role: "admin",
+    mode: "invited",
+  });
 
   revalidatePath("/admin/hiring");
   return {
