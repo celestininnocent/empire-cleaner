@@ -1,65 +1,95 @@
-import Image from "next/image";
+import Link from "next/link";
+import { CalendarClock, Home, MapPin, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { siteConfig } from "@/config/site";
+import { SiteShell } from "@/components/site-shell";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <SiteShell>
+      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-background via-background to-primary/[0.03]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-28">
+          <div className="space-y-6">
+            <p className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+              {siteConfig.businessName}
+            </p>
+            <h1 className="text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+              {siteConfig.heroTitle}
+            </h1>
+            <p className="max-w-xl text-pretty text-lg text-muted-foreground">
+              {siteConfig.heroLead}
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link
+                href="/book"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "h-auto min-h-12 px-8 py-3.5 text-base font-semibold tracking-tight shadow-lg shadow-primary/30 ring-2 ring-primary/25 transition hover:brightness-[1.03] hover:shadow-xl hover:shadow-primary/35 hover:ring-primary/40 active:scale-[0.98] sm:min-h-14 sm:px-10 sm:py-4 sm:text-lg"
+                )}
+              >
+                Book a clean
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-6 pt-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="size-4 text-primary" aria-hidden />
+                Secure checkout
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <CalendarClock className="size-4 text-primary" aria-hidden />
+                One visit or recurring plans
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Users className="size-4 text-primary" aria-hidden />
+                Professional cleaning teams
+              </span>
+            </div>
+          </div>
+          <div className="relative rounded-3xl border border-border/80 bg-card p-6 shadow-xl shadow-primary/5">
+            <div className="absolute -right-6 -top-6 hidden h-24 w-24 rounded-full bg-primary/10 blur-2xl lg:block" />
+            <ul className="space-y-4 text-sm">
+              <li className="flex gap-3 rounded-2xl bg-muted/40 p-4">
+                <Home className="mt-0.5 size-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">Pricing that matches your space</p>
+                  <p className="text-muted-foreground">
+                    Bedrooms, baths, and square footage shape your quote — no surprises at checkout.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl bg-muted/40 p-4">
+                <CalendarClock className="mt-0.5 size-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">When you want us there</p>
+                  <p className="text-muted-foreground">
+                    Book a single visit or set up weekly, bi-weekly, or monthly service — whatever works for you.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl bg-muted/40 p-4">
+                <MapPin className="mt-0.5 size-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">Local teams</p>
+                  <p className="text-muted-foreground">
+                    We send experienced cleaners to your address and keep you in the loop from booking to finish.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl bg-muted/40 p-4">
+                <Sparkles className="mt-0.5 size-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">Your account, your visits</p>
+                  <p className="text-muted-foreground">
+                    After you book, sign in anytime to see upcoming visits, updates, and who we are sending.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+    </SiteShell>
   );
 }
