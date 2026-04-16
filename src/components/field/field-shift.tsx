@@ -15,7 +15,6 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import {
   calculateCrewPayoutBreakdown,
-  commissionPerCleanerCents,
   getCommissionPoolPercent,
   getCrewSplitWays,
   getOnTimeBonusCents,
@@ -40,7 +39,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-google-maps";
+import {
+  APIProvider,
+  Map as GoogleMap,
+  AdvancedMarker,
+  useMap,
+} from "@vis.gl/react-google-maps";
 import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
@@ -52,14 +56,55 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
   timeout: 25_000,
 };
 
-function getCurrentPositionAsync(): Promise<GeolocationPosition> {
+/** Used when loading the field map pin (slightly more accurate than dispatch ping). */
+const MAP_GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  maximumAge: 45_000,
+  timeout: 20_000,
+};
+
+function getCurrentPositionAsync(options: PositionOptions = GEOLOCATION_OPTIONS): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported in this browser."));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject, GEOLOCATION_OPTIONS);
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
+}
+
+/** Fits the map to two points, or centers a single point; must render inside `<GoogleMap>`. */
+function FieldMapCamera({
+  a,
+  b,
+  fallbackCenter,
+  fallbackZoom,
+}: {
+  a: { lat: number; lng: number } | null;
+  b: { lat: number; lng: number } | null;
+  fallbackCenter: { lat: number; lng: number };
+  fallbackZoom: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || typeof google === "undefined") return;
+    const pts = [a, b].filter(
+      (p): p is { lat: number; lng: number } =>
+        p != null && Number.isFinite(p.lat) && Number.isFinite(p.lng)
+    );
+    if (pts.length >= 2) {
+      const bounds = new google.maps.LatLngBounds();
+      for (const p of pts) bounds.extend(p);
+      map.fitBounds(bounds, 40);
+    } else if (pts.length === 1) {
+      map.panTo(pts[0]!);
+      map.setZoom(fallbackZoom);
+    } else {
+      map.panTo(fallbackCenter);
+      map.setZoom(fallbackZoom);
+    }
+  }, [map, a?.lat, a?.lng, b?.lat, b?.lng, fallbackCenter.lat, fallbackCenter.lng, fallbackZoom]);
+  return null;
 }
 
 function geolocationErrorMessage(err: unknown): string {
@@ -202,6 +247,29 @@ export function FieldShift({
     entryId: string | null;
     startedAt: string | null;
   }>({ jobId: null, entryId: null, startedAt: null });
+  const [deviceLocation, setDeviceLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+    let cancelled = false;
+    getCurrentPositionAsync(MAP_GEOLOCATION_OPTIONS)
+      .then((pos) => {
+        if (cancelled) return;
+        setDeviceLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      })
+      .catch(() => {
+        /* Map still shows the stop / crew base if GPS is denied or unavailable. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!routeJobs.length) {
@@ -260,6 +328,7 @@ export function FieldShift({
       const pos = await getCurrentPositionAsync();
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      setDeviceLocation({ lat, lng });
 
       const controller = new AbortController();
       const fetchTimeout = window.setTimeout(() => controller.abort(), 35_000);
@@ -591,8 +660,7 @@ export function FieldShift({
                 </Badge>
               </CardTitle>
               <CardDescription>
-                {activeJob.city}, {activeJob.state} {activeJob.zip} ·{" "}
-                {formatUsd(activeJob.price_cents)} job total
+                {activeJob.city}, {activeJob.state} {activeJob.zip}
               </CardDescription>
               {activeJob.customer_notes?.trim() ? (
                 <div className="mt-3 rounded-lg border border-amber-500/35 bg-amber-500/[0.08] px-3 py-2.5">
@@ -611,14 +679,25 @@ export function FieldShift({
                   <div className="h-48 overflow-hidden rounded-xl border border-border/80">
                     <GoogleMap
                       key={`job-${activeJob.id}-${stopMapCenter.lat.toFixed(4)}-${stopMapCenter.lng.toFixed(4)}`}
-                      defaultCenter={stopMapCenter}
+                      defaultCenter={deviceLocation ?? stopMapCenter}
                       defaultZoom={14}
                       mapId="empire-cleaner-field"
                       gestureHandling="greedy"
                     >
-                      <AdvancedMarker position={stopMapCenter}>
+                      <FieldMapCamera
+                        a={stopMapCenter}
+                        b={deviceLocation}
+                        fallbackCenter={stopMapCenter}
+                        fallbackZoom={14}
+                      />
+                      <AdvancedMarker position={stopMapCenter} title="Job">
                         <div className="size-3 rounded-full border-2 border-white bg-amber-500 shadow-md" />
                       </AdvancedMarker>
+                      {deviceLocation ? (
+                        <AdvancedMarker position={deviceLocation} title="You">
+                          <div className="size-3.5 rounded-full border-2 border-white bg-blue-600 shadow-md ring-2 ring-blue-400/40" />
+                        </AdvancedMarker>
+                      ) : null}
                     </GoogleMap>
                   </div>
                 </APIProvider>
@@ -694,12 +773,11 @@ export function FieldShift({
                 Clock-in / Clock-out
               </CardTitle>
               <CardDescription>
-                Crew pool is {getCommissionPoolPercent()}% of the job total, split{" "}
-                {getCrewSplitWays()} way{getCrewSplitWays() === 1 ? "" : "s"} — about{" "}
-                {formatUsd(commissionPerCleanerCents(activeJob.price_cents))} base per person on
-                this stop when you clock out.
-                {" "}Bonuses: {formatUsd(getQualityBonusCents())} quality +{" "}
-                {formatUsd(getOnTimeBonusCents())} on-time (within {getOnTimeWindowMinutes()} min).
+                Crew pool is {getCommissionPoolPercent()}% of the booking, split{" "}
+                {getCrewSplitWays()} way{getCrewSplitWays() === 1 ? "" : "s"}. Your share is
+                calculated when you clock out—see payouts below. Bonuses:{" "}
+                {formatUsd(getQualityBonusCents())} quality + {formatUsd(getOnTimeBonusCents())}{" "}
+                on-time (within {getOnTimeWindowMinutes()} min of start).
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
@@ -861,20 +939,39 @@ export function FieldShift({
             <CardContent className="pt-0">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Crew base map (no stops assigned yet).
+                  {deviceLocation
+                    ? "Blue pin: your location. Sky pin: crew base when assigned."
+                    : "Crew base map (no stops assigned yet). Allow location to see where you are."}
                 </p>
                 <APIProvider apiKey={mapKey}>
                   <div className="h-52 overflow-hidden rounded-xl border border-border/80">
                     <GoogleMap
                       key={`base-${baseMapCenter.lat.toFixed(4)}-${baseMapCenter.lng.toFixed(4)}`}
-                      defaultCenter={baseMapCenter}
+                      defaultCenter={deviceLocation ?? baseMapCenter}
                       defaultZoom={11}
                       mapId="empire-cleaner-field-empty"
                       gestureHandling="greedy"
                     >
-                      <AdvancedMarker position={baseMapCenter}>
-                        <div className="size-3 rounded-full border-2 border-white bg-sky-500 shadow-md" />
-                      </AdvancedMarker>
+                      <FieldMapCamera
+                        a={teamBase ?? null}
+                        b={deviceLocation}
+                        fallbackCenter={baseMapCenter}
+                        fallbackZoom={teamBase ? 11 : deviceLocation ? 12 : 11}
+                      />
+                      {teamBase ? (
+                        <AdvancedMarker position={teamBase} title="Crew base">
+                          <div className="size-3 rounded-full border-2 border-white bg-sky-500 shadow-md" />
+                        </AdvancedMarker>
+                      ) : null}
+                      {deviceLocation ? (
+                        <AdvancedMarker position={deviceLocation} title="You">
+                          <div className="size-3.5 rounded-full border-2 border-white bg-blue-600 shadow-md ring-2 ring-blue-400/40" />
+                        </AdvancedMarker>
+                      ) : !teamBase ? (
+                        <AdvancedMarker position={baseMapCenter} title="Area">
+                          <div className="size-3 rounded-full border-2 border-white bg-muted-foreground shadow-md" />
+                        </AdvancedMarker>
+                      ) : null}
                     </GoogleMap>
                   </div>
                 </APIProvider>
@@ -925,8 +1022,7 @@ export function FieldShift({
                           {j.zip} · {j.bedrooms}bd/{j.bathrooms}ba · {j.square_footage} sq ft
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{formatUsd(j.price_cents)}</span>
+                      <div className="flex shrink-0 items-center gap-2">
                         <Button
                           type="button"
                           size="sm"

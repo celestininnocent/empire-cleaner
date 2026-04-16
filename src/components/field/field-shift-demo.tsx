@@ -12,9 +12,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import {
-  commissionPerCleanerCents,
   getCommissionPoolPercent,
   getCrewSplitWays,
+  getQualityBonusCents,
+  getOnTimeBonusCents,
+  getOnTimeWindowMinutes,
 } from "@/lib/commission";
 import {
   buildDemoChecklist,
@@ -178,8 +180,7 @@ export function FieldShiftDemo() {
                 ) : null}
               </CardTitle>
               <CardDescription>
-                {activeJob.city}, {activeJob.state} {activeJob.zip} ·{" "}
-                {formatUsd(activeJob.price_cents)} job total
+                {activeJob.city}, {activeJob.state} {activeJob.zip}
               </CardDescription>
               {activeJob.customer_notes?.trim() ? (
                 <div className="mt-3 rounded-lg border border-amber-500/35 bg-amber-500/[0.08] px-3 py-2.5">
@@ -258,10 +259,11 @@ export function FieldShiftDemo() {
                 Clock-in / Clock-out
               </CardTitle>
               <CardDescription>
-                Crew pool is {getCommissionPoolPercent()}% of the job total, split{" "}
-                {getCrewSplitWays()} way{getCrewSplitWays() === 1 ? "" : "s"} — about{" "}
-                {formatUsd(commissionPerCleanerCents(activeJob.price_cents))} per person on this stop
-                when you clock out (demo only).
+                Crew pool is {getCommissionPoolPercent()}% of the booking, split{" "}
+                {getCrewSplitWays()} way{getCrewSplitWays() === 1 ? "" : "s"}. Your share is
+                calculated when you clock out (demo). Bonuses: {formatUsd(getQualityBonusCents())}{" "}
+                quality + {formatUsd(getOnTimeBonusCents())} on-time (within{" "}
+                {getOnTimeWindowMinutes()} min of start).
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
