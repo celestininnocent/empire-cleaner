@@ -20,7 +20,6 @@ type MsgRow = {
   body: string;
   created_at: string;
   profile_id: string;
-  profiles?: { full_name: string | null } | null;
 };
 
 export function FieldCrewMessaging({ teamId }: { teamId: string | null }) {
@@ -38,35 +37,30 @@ export function FieldCrewMessaging({ teamId }: { teamId: string | null }) {
     const supabase = createClient();
     const { data, error: e } = await supabase
       .from("crew_dispatch_messages")
-      .select("id, body, created_at, profile_id, profiles(full_name)")
+      .select("id, body, created_at, profile_id")
       .eq("team_id", teamId)
       .order("created_at", { ascending: true })
       .limit(80);
 
     if (e) {
       const msg = e.message ?? "";
-      const missingTable = /relation|does not exist|schema cache/i.test(msg);
+      const code = "code" in e && typeof (e as { code?: string }).code === "string"
+        ? (e as { code: string }).code
+        : "";
+      const missingTableOrCache =
+        /schema cache/i.test(msg) ||
+        /crew_dispatch_messages.*does not exist/i.test(msg) ||
+        /relation ["']public\.crew_dispatch_messages["'] does not exist/i.test(msg) ||
+        (/42P01/i.test(code) && /crew_dispatch_messages/i.test(msg));
       setError(
-        missingTable
-          ? "Crew team chat isn’t enabled in your database yet. In Supabase → SQL Editor, run the migration `supabase/migrations/009_crew_dispatch_messages.sql` from this project, then wait a minute or use Dashboard → Settings → API to refresh the schema cache if the table already exists."
+        missingTableOrCache
+          ? "Crew team chat needs the `crew_dispatch_messages` table in the same Supabase project your app uses. Run the SQL from `supabase/migrations/009_crew_dispatch_messages.sql` in Supabase → SQL Editor, confirm `public.teams` and `public.cleaners` already exist, then wait 1–2 minutes (or restart the project under Settings) so the API schema cache refreshes."
           : msg
       );
       setRows([]);
     } else {
       setError(null);
-      const raw = (data ?? []) as {
-        id: string;
-        body: string;
-        created_at: string;
-        profile_id: string;
-        profiles: { full_name: string | null } | { full_name: string | null }[] | null;
-      }[];
-      setRows(
-        raw.map((r) => ({
-          ...r,
-          profiles: Array.isArray(r.profiles) ? r.profiles[0] ?? null : r.profiles,
-        }))
-      );
+      setRows((data ?? []) as MsgRow[]);
     }
     setLoading(false);
   }, [teamId]);
@@ -146,9 +140,7 @@ export function FieldCrewMessaging({ teamId }: { teamId: string | null }) {
                 <div key={m.id} className="rounded-md bg-card px-3 py-2 shadow-sm">
                   <div className="flex justify-between gap-2 text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">
-                      {m.profile_id === myId
-                        ? "You"
-                        : m.profiles?.full_name?.trim() || "Teammate"}
+                      {m.profile_id === myId ? "You" : "Teammate"}
                     </span>
                     <time dateTime={m.created_at}>
                       {new Date(m.created_at).toLocaleString(undefined, {
