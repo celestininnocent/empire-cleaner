@@ -25,6 +25,7 @@ type ClaimCrewResult = {
   linked?: boolean;
   reason?: string;
   error?: string;
+  team_id?: string;
 };
 
 function parseClaimCrewResult(raw: unknown): ClaimCrewResult | null {
@@ -42,6 +43,17 @@ function parseClaimCrewResult(raw: unknown): ClaimCrewResult | null {
   return null;
 }
 
+type CleanerRow = {
+  id: string;
+  team_id: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  teams:
+    | { base_lat: number | null; base_lng: number | null; zip_code: string | null }
+    | { base_lat: number | null; base_lng: number | null; zip_code: string | null }[]
+    | null;
+};
+
 async function loadCleanerRow(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
@@ -51,7 +63,18 @@ async function loadCleanerRow(
     .select("id, team_id, bio, photo_url, teams(base_lat, base_lng, zip_code)")
     .eq("profile_id", userId)
     .maybeSingle();
-  return data;
+  return data as CleanerRow | null;
+}
+
+async function loadCleanerRowServiceRole(userId: string) {
+  const svc = createServiceRoleClient();
+  if (!svc) return null;
+  const { data } = await svc
+    .from("cleaners")
+    .select("id, team_id, bio, photo_url, teams(base_lat, base_lng, zip_code)")
+    .eq("profile_id", userId)
+    .maybeSingle();
+  return (data as CleanerRow | null) ?? null;
 }
 
 export default async function FieldPage() {
@@ -100,6 +123,11 @@ export default async function FieldPage() {
     }
   }
 
+  if (!cleaner?.team_id && claim?.ok === true && claim?.linked) {
+    const svcCleaner = await loadCleanerRowServiceRole(user.id);
+    if (svcCleaner?.team_id) cleaner = svcCleaner;
+  }
+
   const rawTeam = cleaner?.teams as
     | { base_lat: number | null; base_lng: number | null; zip_code: string | null }
     | { base_lat: number | null; base_lng: number | null; zip_code: string | null }[]
@@ -130,9 +158,9 @@ export default async function FieldPage() {
     ? await supabase.from("teams").select("id").order("id", { ascending: true }).limit(1)
     : { data: [] as { id: string }[] };
   const adminFallbackTeamId = teams?.[0]?.id ?? null;
-  const crewTeamId = cleaner?.team_id ?? (isAdminViewer ? adminFallbackTeamId : null);
+  const crewTeamId =
+    cleaner?.team_id ?? claim?.team_id ?? (isAdminViewer ? adminFallbackTeamId : null);
   const crewReady = Boolean(crewTeamId);
-
   const svc = createServiceRoleClient();
 
   if (!crewReady && !isAdminViewer) {
@@ -217,7 +245,7 @@ export default async function FieldPage() {
       : { data: [] };
 
   const { data: claimableJobs } =
-    svc && cleaner?.team_id
+    svc && crewTeamId
       ? await (() => {
           const q = svc
             .from("jobs")
@@ -256,7 +284,7 @@ export default async function FieldPage() {
           }
         />
         <div className="mt-8">
-          <FieldCrewMessaging teamId={cleaner?.team_id ?? null} />
+          <FieldCrewMessaging teamId={crewTeamId} />
         </div>
       </div>
     </SiteShell>
