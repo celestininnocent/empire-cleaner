@@ -15,6 +15,7 @@ import { FieldCrewRefreshBanner } from "@/components/field/field-crew-refresh-ba
 import { FieldShift } from "@/components/field/field-shift";
 import { buttonVariants } from "@/components/ui/button";
 import { computeRouteOrders } from "@/lib/route-optimization";
+import { explainFieldCrewBlocked } from "@/lib/field-crew-blocked-copy";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -116,6 +117,8 @@ export default async function FieldPage() {
   const crewTeamId = cleaner?.team_id ?? (isAdminViewer ? adminFallbackTeamId : null);
   const crewReady = Boolean(crewTeamId);
 
+  const svc = createServiceRoleClient();
+
   if (!crewReady && !isAdminViewer) {
     if (claim?.ok === true && claim?.linked) {
       console.warn(
@@ -126,17 +129,32 @@ export default async function FieldPage() {
       console.warn("[field] claim_crew_access_for_me:", JSON.stringify(claim));
     }
 
+    const explained = await explainFieldCrewBlocked({
+      user,
+      svc,
+      claim,
+      claimErr,
+      cleaner: cleaner ? { team_id: cleaner.team_id ?? null } : null,
+      profileRole: role,
+      supportPhoneDisplay: siteConfig.supportPhoneDisplay,
+    });
+
     return (
       <SiteShell>
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
-          <h1 className="text-2xl font-semibold">Crew app not available</h1>
-          <p className="mt-2 text-muted-foreground">
-            This account does not have crew access. Ask an admin to grant crew app permission in
-            Hiring.
-          </p>
-          <Link href="/" className={cn(buttonVariants({ className: "mt-6" }))}>
-            Back home
-          </Link>
+          <h1 className="text-2xl font-semibold">{explained.headline}</h1>
+          <p className="mt-2 text-muted-foreground">{explained.body}</p>
+          {explained.sub ? (
+            <p className="mt-3 text-sm text-muted-foreground">{explained.sub}</p>
+          ) : null}
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link href="/login?next=/field" className={cn(buttonVariants({ variant: "outline" }))}>
+              Switch account
+            </Link>
+            <Link href="/" className={cn(buttonVariants({ className: "" }))}>
+              Back home
+            </Link>
+          </div>
         </div>
       </SiteShell>
     );
@@ -182,7 +200,6 @@ export default async function FieldPage() {
           .limit(8)
       : { data: [] };
 
-  const svc = createServiceRoleClient();
   const { data: claimableJobs } =
     svc && cleaner?.team_id
       ? await (() => {
