@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { authUserMatchesEmail } from "@/lib/supabase/find-auth-user-by-email";
 import { pickFallbackTeamId, resolveCrewTeamAssignment } from "@/lib/crew-team-matching";
+import { approximateLatLngFromZip } from "@/lib/geo";
 
 /**
  * If there are no crews yet, create one default row so owners never have to run SQL in Supabase.
@@ -11,11 +12,14 @@ export async function ensureDefaultTeamExists(svc: SupabaseClient): Promise<void
   const { data: existing } = await svc.from("teams").select("id").limit(1).maybeSingle();
   if (existing?.id) return;
 
+  const fallbackZip = (process.env.NEXT_PUBLIC_DEFAULT_SERVICE_ZIP ?? "97209").trim() || "97209";
+  const { lat, lng } = approximateLatLngFromZip(fallbackZip);
+
   const { error } = await svc.from("teams").insert({
     name: "Main crew",
-    zip_code: "00000",
-    base_lat: 37.7749,
-    base_lng: -122.4194,
+    zip_code: fallbackZip,
+    base_lat: lat,
+    base_lng: lng,
     is_available: true,
   });
   if (error) {
@@ -140,7 +144,7 @@ export async function syncCrewAccessForUser(userId: string): Promise<void> {
   if (match.app_access_role === "admin") return;
 
   await ensureDefaultTeamExists(svc);
-  const { data: teamRows } = await svc.from("teams").select("id, zip_code");
+  const { data: teamRows } = await svc.from("teams").select("id, zip_code, base_lat, base_lng");
   const teams = teamRows ?? [];
   if (teams.length === 0) return;
 
@@ -209,7 +213,7 @@ export async function ensureDefaultCrewAccessForFieldUser(userId: string): Promi
   if (existing?.team_id) return;
 
   await ensureDefaultTeamExists(svc);
-  const { data: teamRows } = await svc.from("teams").select("id, zip_code");
+  const { data: teamRows } = await svc.from("teams").select("id, zip_code, base_lat, base_lng");
   const teams = teamRows ?? [];
   const { teamId: resolved } = resolveCrewTeamAssignment({
     teams,

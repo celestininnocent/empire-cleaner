@@ -26,13 +26,21 @@
  * geographically sane while **people** use ZIP + explicit owner choices above.
  */
 
-export type TeamZipRow = { id: string; zip_code: string };
+import { approximateLatLngFromZip, haversineMiles } from "@/lib/geo";
+
+export type TeamZipRow = {
+  id: string;
+  zip_code: string;
+  base_lat?: number | null;
+  base_lng?: number | null;
+};
 
 export type CrewAssignmentReason =
   | "manual_pick"
   | "stored_applicant"
   | "single_crew"
   | "zip"
+  | "zip_nearest"
   | "fallback"
   | "none";
 
@@ -61,6 +69,42 @@ export function matchTeamIdByApplicantZip(
   if (matches.length === 0) return undefined;
   matches.sort((a, b) => a.id.localeCompare(b.id));
   return matches[0]!.id;
+}
+
+/**
+ * If no exact ZIP team exists, pick the geographically nearest team base to the ZIP centroid.
+ */
+export function matchNearestTeamIdByApplicantZip(
+  applicantZip: string | null | undefined,
+  teams: TeamZipRow[]
+): string | undefined {
+  const nz = normalizeZipKey(applicantZip);
+  if (!nz || teams.length === 0) return undefined;
+  const target = approximateLatLngFromZip(nz);
+
+  const candidates = teams.filter(
+    (t) =>
+      t.base_lat != null &&
+      t.base_lng != null &&
+      Number.isFinite(Number(t.base_lat)) &&
+      Number.isFinite(Number(t.base_lng))
+  );
+  if (candidates.length === 0) return undefined;
+
+  let bestId: string | undefined;
+  let bestDist = Number.POSITIVE_INFINITY;
+
+  for (const t of candidates) {
+    const dist = haversineMiles(target.lat, target.lng, Number(t.base_lat), Number(t.base_lng));
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestId = t.id;
+    } else if (dist === bestDist && bestId && t.id.localeCompare(bestId) < 0) {
+      bestId = t.id;
+    }
+  }
+
+  return bestId;
 }
 
 /**
@@ -110,6 +154,11 @@ export function resolveCrewTeamAssignment(
   const byZip = matchTeamIdByApplicantZip(input.serviceZip, teams);
   if (byZip) {
     return { teamId: byZip, reason: "zip" };
+  }
+
+  const nearZip = matchNearestTeamIdByApplicantZip(input.serviceZip, teams);
+  if (nearZip) {
+    return { teamId: nearZip, reason: "zip_nearest" };
   }
 
   const fb = pickFallbackTeamId(teams);

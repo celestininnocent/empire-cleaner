@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { approximateLatLngFromZip } from "@/lib/geo";
 
 export type MapJob = {
   id: string;
@@ -19,7 +20,8 @@ export type MapTeam = {
   name: string;
 };
 
-const defaultCenter = { lat: 37.7749, lng: -122.4194 };
+const fallbackZip = (process.env.NEXT_PUBLIC_DEFAULT_SERVICE_ZIP ?? "97209").trim();
+const defaultCenter = approximateLatLngFromZip(fallbackZip);
 
 export function DispatchMap({
   jobs,
@@ -50,6 +52,18 @@ export function DispatchMap({
       kind: "team" as const,
     }));
     return [...teamMarkers, ...jobMarkers];
+  }, [jobs, teams]);
+
+  const mapCenter = useMemo(() => {
+    const firstJobWithCoords = jobs.find((j) => j.lat != null && j.lng != null);
+    if (firstJobWithCoords?.lat != null && firstJobWithCoords?.lng != null) {
+      return { lat: firstJobWithCoords.lat, lng: firstJobWithCoords.lng };
+    }
+    const firstTeam = teams[0];
+    if (firstTeam) {
+      return { lat: firstTeam.base_lat, lng: firstTeam.base_lng };
+    }
+    return defaultCenter;
   }, [jobs, teams]);
 
   if (!key) {
@@ -90,7 +104,7 @@ export function DispatchMap({
     <APIProvider apiKey={key}>
       <div className="h-[420px] overflow-hidden rounded-2xl border border-border/80 shadow-inner">
         <GoogleMap
-          defaultCenter={defaultCenter}
+          defaultCenter={mapCenter}
           defaultZoom={12}
           mapId="empire-cleaner-dispatch"
           gestureHandling="greedy"
