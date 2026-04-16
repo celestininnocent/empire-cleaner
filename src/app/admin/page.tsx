@@ -260,6 +260,13 @@ export default async function AdminPage() {
               <Download className="size-4" />
               Export customers (CSV)
             </a>
+            <a
+              href="/api/admin/exports/crew"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              <Download className="size-4" />
+              Export crew (CSV)
+            </a>
             <DispatchControls />
           </div>
         </div>
