@@ -194,6 +194,7 @@ export function FieldShift({
   const [busy, setBusy] = useState<string | null>(null);
   const [payoutNotice, setPayoutNotice] = useState<string | null>(null);
   const [gpsShareError, setGpsShareError] = useState<string | null>(null);
+  const [gpsShareSuccess, setGpsShareSuccess] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimNotice, setClaimNotice] = useState<string | null>(null);
   const [clock, setClock] = useState<{
@@ -253,6 +254,7 @@ export function FieldShift({
       return;
     }
     setGpsShareError(null);
+    setGpsShareSuccess(null);
     setBusy("gps");
     try {
       const pos = await getCurrentPositionAsync();
@@ -272,18 +274,29 @@ export function FieldShift({
         window.clearTimeout(fetchTimeout);
       }
 
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        ok?: boolean;
+        reason?: string;
+        queued?: number;
+      };
+
       if (!res.ok) {
-        let detail = `Server returned ${res.status}.`;
-        try {
-          const j = (await res.json()) as { error?: string };
-          if (j.error) detail = j.error;
-        } catch {
-          /* ignore */
-        }
-        setGpsShareError(detail);
+        setGpsShareError(data.error ?? `Server returned ${res.status}.`);
         return;
       }
-      router.refresh();
+
+      if (data.reason === "no_team") {
+        setGpsShareSuccess(
+          "Location saved. You are not assigned to a crew team yet, so some dispatch features may be limited."
+        );
+      } else {
+        setGpsShareSuccess(
+          data.queued && data.queued > 0
+            ? `Location shared. We notified a customer you may be nearby (${data.queued} update).`
+            : "Location shared with dispatch."
+        );
+      }
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setGpsShareError("Saving location took too long. Check your connection and try again.");
@@ -471,6 +484,14 @@ export function FieldShift({
       {gpsShareError ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
           {gpsShareError}
+        </p>
+      ) : null}
+      {gpsShareSuccess ? (
+        <p
+          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-900 dark:text-emerald-200"
+          role="status"
+        >
+          {gpsShareSuccess}
         </p>
       ) : null}
       {claimNotice ? (

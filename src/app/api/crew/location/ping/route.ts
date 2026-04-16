@@ -23,27 +23,47 @@ export async function POST(request: Request) {
     const svc = createServiceRoleClient();
     if (!svc) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-    const { data: cleaner } = await svc
+    let { data: cleaner } = await svc
       .from("cleaners")
       .select("id, team_id")
       .eq("profile_id", user.id)
       .maybeSingle();
+
     if (!cleaner?.id) {
-      return NextResponse.json({ error: "Cleaner account required" }, { status: 403 });
+      await supabase.rpc("claim_crew_access_for_me");
+      const retry = await svc
+        .from("cleaners")
+        .select("id, team_id")
+        .eq("profile_id", user.id)
+        .maybeSingle();
+      cleaner = retry.data;
+    }
+
+    if (!cleaner?.id) {
+      return NextResponse.json(
+        { error: "Crew account is not linked yet. Refresh the page or sign out and back in, then try again." },
+        { status: 403 }
+      );
     }
 
     const nowIso = new Date().toISOString();
-    await svc
+    const { error: upErr } = await svc
       .from("cleaners")
       .update({ current_lat: lat, current_lng: lng, last_location_at: nowIso })
       .eq("id", cleaner.id);
+    if (upErr) {
+      return NextResponse.json({ error: upErr.message }, { status: 400 });
+    }
 
-    await svc.from("cleaner_location_pings").insert({
+    const { error: pingErr } = await svc.from("cleaner_location_pings").insert({
       cleaner_id: cleaner.id,
       lat,
       lng,
       source: "crew_app",
     });
+    if (pingErr) {
+      console.error("[crew/location/ping] cleaner_location_pings insert:", pingErr.message);
+    }
 
     if (!cleaner.team_id) {
       return NextResponse.json({ ok: true, queued: 0, reason: "no_team" });
