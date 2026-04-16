@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
-function csvCell(v: string | number | null | undefined): string {
+function csvCell(v: string | number | boolean | null | undefined): string {
   const s = v == null ? "" : String(v);
   return `"${s.replace(/"/g, '""')}"`;
 }
@@ -71,7 +71,7 @@ export async function GET() {
 
   const lines = [header.map(csvCell).join(",")];
 
-  for (const row of rows ?? []) {
+  for (const row of (rows ?? []) as unknown[]) {
     const r = row as {
       id: string;
       profile_id: string;

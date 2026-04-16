@@ -70,7 +70,7 @@ export async function GET() {
 
   const lines = [header.map(csvCell).join(",")];
 
-  for (const row of rows ?? []) {
+  for (const row of (rows ?? []) as unknown[]) {
     const r = row as {
       id: string;
       profile_id: string;
