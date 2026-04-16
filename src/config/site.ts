@@ -9,15 +9,15 @@ const SUPPORT_PHONE_TEL = "+15039978018";
 export const siteConfig = {
   businessName: "Empire Cleaner",
 
-  titleSuffix: "Premium home cleaning",
+  titleSuffix: "Premium cleaning services",
 
   metaDescription:
-    "Book home cleaning online — one-time or recurring visits, clear pricing, and a simple account to manage your service.",
+    "Book cleaning online — one-time or recurring visits, clear pricing, and a simple account to manage your service.",
 
   /**
    * Home hero — written for homeowners; crew and owners use the nav for their tools.
    */
-  heroTitle: "House cleaning that fits your home and your schedule.",
+  heroTitle: "Cleaning that fits your schedule.",
   heroLead:
     "Book online in a few minutes, see your price up front, and choose one visit or a recurring plan. Sign in anytime to manage visits or your account.",
 

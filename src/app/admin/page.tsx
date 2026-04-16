@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Banknote,
   Clock3,
+  Download,
   MapPinned,
   MessageCircle,
   Route,
@@ -252,6 +253,13 @@ export default async function AdminPage() {
               <MessageCircle className="size-4" />
               SMS templates
             </Link>
+            <a
+              href="/api/admin/exports/customers"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              <Download className="size-4" />
+              Export customers (CSV)
+            </a>
             <DispatchControls />
           </div>
         </div>
