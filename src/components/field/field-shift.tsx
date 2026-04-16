@@ -45,6 +45,39 @@ import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
 
+const GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  maximumAge: 60_000,
+  timeout: 25_000,
+};
+
+function getCurrentPositionAsync(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported in this browser."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, GEOLOCATION_OPTIONS);
+  });
+}
+
+function geolocationErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "code" in err) {
+    const code = (err as GeolocationPositionError).code;
+    if (code === 1) {
+      return "Location permission denied. Allow location for this site in your browser settings and try again.";
+    }
+    if (code === 2) {
+      return "Location unavailable (GPS or network issue). Move to an area with better signal or try again.";
+    }
+    if (code === 3) {
+      return "Location request timed out. Try again, or check that location services are on.";
+    }
+  }
+  if (err instanceof Error) return err.message;
+  return "Could not read your location.";
+}
+
 type JobRow = {
   id: string;
   scheduled_start: string;
@@ -186,41 +219,59 @@ export function FieldShift({
         );
 
   async function shareLocation() {
-    if (!cleanerId || !navigator.geolocation) return;
+    if (!cleanerId) return;
+    if (!navigator.geolocation) {
+      setGpsShareError("This browser does not support sharing location.");
+      return;
+    }
     setGpsShareError(null);
     setBusy("gps");
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        try {
-          const res = await fetch("/api/crew/location/ping", {
-            ...sameOriginJsonPost,
-            body: JSON.stringify({ lat, lng }),
-          });
-          if (!res.ok) {
-            let detail = `Server returned ${res.status}.`;
-            try {
-              const j = (await res.json()) as { error?: string };
-              if (j.error) detail = j.error;
-            } catch {
-              /* ignore */
-            }
-            setGpsShareError(detail);
-            return;
-          }
-          router.refresh();
-        } catch (e) {
-          setGpsShareError(friendlyFetchFailureMessage(e));
-        } finally {
-          setBusy(null);
-        }
-      },
-      () => {
-        setGpsShareError("Location permission denied or unavailable. Enable location for this site and try again.");
-        setBusy(null);
+    try {
+      const pos = await getCurrentPositionAsync();
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      const controller = new AbortController();
+      const fetchTimeout = window.setTimeout(() => controller.abort(), 35_000);
+      let res: Response;
+      try {
+        res = await fetch("/api/crew/location/ping", {
+          ...sameOriginJsonPost,
+          body: JSON.stringify({ lat, lng }),
+          signal: controller.signal,
+        });
+      } finally {
+        window.clearTimeout(fetchTimeout);
       }
-    );
+
+      if (!res.ok) {
+        let detail = `Server returned ${res.status}.`;
+        try {
+          const j = (await res.json()) as { error?: string };
+          if (j.error) detail = j.error;
+        } catch {
+          /* ignore */
+        }
+        setGpsShareError(detail);
+        return;
+      }
+      router.refresh();
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        setGpsShareError("Saving location took too long. Check your connection and try again.");
+      } else if (
+        e &&
+        typeof e === "object" &&
+        "code" in e &&
+        (e as GeolocationPositionError).code !== undefined
+      ) {
+        setGpsShareError(geolocationErrorMessage(e));
+      } else {
+        setGpsShareError(friendlyFetchFailureMessage(e));
+      }
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function clockIn() {
@@ -530,8 +581,21 @@ export function FieldShift({
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" size="sm" onClick={shareLocation}>
-                  Share GPS with dispatch
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={!cleanerId || busy === "gps"}
+                  onClick={shareLocation}
+                >
+                  {busy === "gps" ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      Getting location…
+                    </>
+                  ) : (
+                    "Share GPS with dispatch"
+                  )}
                 </Button>
                 {activeJob.lat != null && activeJob.lng != null ? (
                   <a
