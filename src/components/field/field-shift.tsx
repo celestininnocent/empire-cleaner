@@ -48,7 +48,7 @@ import {
 import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
-import { defaultServiceMapCenter } from "@/lib/geo";
+import { defaultServiceMapCenter, haversineMiles } from "@/lib/geo";
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
@@ -144,13 +144,22 @@ function jobStopMapCenter(
   job: JobRow,
   teamBase: { lat: number; lng: number } | null
 ): { lat: number; lng: number } {
+  const maxStopDistanceMiles = Number.parseFloat(
+    process.env.NEXT_PUBLIC_MAX_MAP_DISTANCE_MILES ?? "180"
+  );
+  const origin = teamBase ?? defaultServiceMapCenter();
   if (
     job.lat != null &&
     job.lng != null &&
     Number.isFinite(Number(job.lat)) &&
     Number.isFinite(Number(job.lng))
   ) {
-    return { lat: Number(job.lat), lng: Number(job.lng) };
+    const lat = Number(job.lat);
+    const lng = Number(job.lng);
+    const dist = haversineMiles(origin.lat, origin.lng, lat, lng);
+    if (dist <= (Number.isFinite(maxStopDistanceMiles) ? maxStopDistanceMiles : 180)) {
+      return { lat, lng };
+    }
   }
   if (teamBase) return teamBase;
   return defaultServiceMapCenter();

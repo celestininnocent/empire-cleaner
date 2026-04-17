@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
+import { defaultServiceMapCenter, haversineMiles } from "@/lib/geo";
 
 export type MapJob = {
   id: string;
@@ -46,12 +47,10 @@ function DispatchMapCamera({
   return null;
 }
 
-const fallbackLat = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LAT ?? "45.5231");
-const fallbackLng = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LNG ?? "-122.6765");
-const defaultCenter = {
-  lat: Number.isFinite(fallbackLat) ? fallbackLat : 45.5231,
-  lng: Number.isFinite(fallbackLng) ? fallbackLng : -122.6765,
-};
+const defaultCenter = defaultServiceMapCenter();
+const maxMarkerDistanceMiles = Number.parseFloat(
+  process.env.NEXT_PUBLIC_MAX_MAP_DISTANCE_MILES ?? "180"
+);
 
 export function DispatchMap({
   jobs,
@@ -63,8 +62,18 @@ export function DispatchMap({
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const markers = useMemo(() => {
+    const anchors = teams.length
+      ? teams.map((t) => ({ lat: t.base_lat, lng: t.base_lng }))
+      : [defaultCenter];
+    const isPlausible = (lat: number, lng: number) =>
+      anchors.some(
+        (a) =>
+          haversineMiles(a.lat, a.lng, lat, lng) <=
+          (Number.isFinite(maxMarkerDistanceMiles) ? maxMarkerDistanceMiles : 180)
+      );
     const jobMarkers = jobs
       .filter((j) => j.lat != null && j.lng != null)
+      .filter((j) => isPlausible(j.lat as number, j.lng as number))
       .map((j) => {
         const note = j.customer_notes?.trim();
         const noteShort = note && note.length > 90 ? `${note.slice(0, 90)}…` : note;
