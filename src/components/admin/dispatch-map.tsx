@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { APIProvider, Map as GoogleMap, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { useEffect, useMemo } from "react";
+import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 
 export type MapJob = {
   id: string;
@@ -18,6 +18,33 @@ export type MapTeam = {
   base_lng: number;
   name: string;
 };
+
+function DispatchMapCamera({
+  points,
+  fallbackCenter,
+}: {
+  points: Array<{ lat: number; lng: number }>;
+  fallbackCenter: { lat: number; lng: number };
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || typeof google === "undefined") return;
+    if (points.length >= 2) {
+      const bounds = new google.maps.LatLngBounds();
+      for (const p of points) bounds.extend(p);
+      map.fitBounds(bounds, 56);
+      return;
+    }
+    if (points.length === 1) {
+      map.panTo(points[0]!);
+      map.setZoom(12);
+      return;
+    }
+    map.panTo(fallbackCenter);
+    map.setZoom(11);
+  }, [map, points, fallbackCenter]);
+  return null;
+}
 
 const fallbackLat = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LAT ?? "45.5231");
 const fallbackLng = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LNG ?? "-122.6765");
@@ -58,13 +85,13 @@ export function DispatchMap({
   }, [jobs, teams]);
 
   const mapCenter = useMemo(() => {
-    const firstJobWithCoords = jobs.find((j) => j.lat != null && j.lng != null);
-    if (firstJobWithCoords?.lat != null && firstJobWithCoords?.lng != null) {
-      return { lat: firstJobWithCoords.lat, lng: firstJobWithCoords.lng };
-    }
     const firstTeam = teams[0];
     if (firstTeam) {
       return { lat: firstTeam.base_lat, lng: firstTeam.base_lng };
+    }
+    const firstJobWithCoords = jobs.find((j) => j.lat != null && j.lng != null);
+    if (firstJobWithCoords?.lat != null && firstJobWithCoords?.lng != null) {
+      return { lat: firstJobWithCoords.lat, lng: firstJobWithCoords.lng };
     }
     return defaultCenter;
   }, [jobs, teams]);
@@ -113,6 +140,10 @@ export function DispatchMap({
           gestureHandling="greedy"
           disableDefaultUI={false}
         >
+          <DispatchMapCamera
+            points={markers.map((m) => m.position)}
+            fallbackCenter={mapCenter}
+          />
           {markers.map((m) => (
             <AdvancedMarker key={m.id} position={m.position} title={m.title}>
               <div

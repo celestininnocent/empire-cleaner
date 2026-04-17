@@ -14,7 +14,6 @@ import {
 } from "@/lib/crew-job-sms";
 import { normalizeAddOnIds } from "@/lib/add-ons";
 import { resolveOrCreateUserForPaidBooking } from "@/lib/checkout/resolve-guest-user";
-import { approximateLatLngFromZip } from "@/lib/geo";
 import { geocodeAddressLine } from "@/lib/geocode-google";
 
 function serviceSupabase() {
@@ -242,10 +241,6 @@ export async function POST(request: Request) {
     if (geocoded) {
       jobLat = geocoded.lat;
       jobLng = geocoded.lng;
-    } else if (zip.replace(/\D/g, "").length >= 5) {
-      const approx = approximateLatLngFromZip(zip);
-      jobLat = approx.lat;
-      jobLng = approx.lng;
     }
 
     const jobCoords = { zip, lat: jobLat, lng: jobLng };

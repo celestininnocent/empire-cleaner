@@ -48,7 +48,7 @@ import {
 import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
-import { approximateLatLngFromZip, defaultServiceMapCenter } from "@/lib/geo";
+import { defaultServiceMapCenter } from "@/lib/geo";
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
@@ -151,10 +151,6 @@ function jobStopMapCenter(
     Number.isFinite(Number(job.lng))
   ) {
     return { lat: Number(job.lat), lng: Number(job.lng) };
-  }
-  const z = job.zip?.trim();
-  if (z && z.replace(/\D/g, "").length >= 5) {
-    return approximateLatLngFromZip(z);
   }
   if (teamBase) return teamBase;
   return defaultServiceMapCenter();
