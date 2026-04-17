@@ -335,6 +335,30 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : 0;
 
   const recentGrowthRows = filteredGrowthRows.slice(0, 120);
+  const taggedBookings = filteredGrowthRows.reduce((acc, r) => {
+    const tagged =
+      r.utm_source !== "(direct)" &&
+      r.utm_source !== "(none)" &&
+      r.utm_campaign !== "(none)";
+    return acc + (tagged ? r.bookings_count : 0);
+  }, 0);
+  const taggedPct = totalFilteredBookings
+    ? Math.round((taggedBookings / totalFilteredBookings) * 100)
+    : 0;
+  const freshestGrowthWeek = filteredGrowthRows.length
+    ? filteredGrowthRows
+        .map((r) => new Date(r.week_start))
+        .sort((a, b) => b.getTime() - a.getTime())[0]
+    : null;
+  const fallbackRecentJobsWithDates = (jobs ?? []).filter((j) => Boolean(j.created_at));
+  const latestJobCreatedAt = fallbackRecentJobsWithDates.length
+    ? fallbackRecentJobsWithDates
+        .map((j) => new Date(j.created_at))
+        .sort((a, b) => b.getTime() - a.getTime())[0]
+    : null;
+  const staleTracking =
+    freshestGrowthWeek != null &&
+    Date.now() - freshestGrowthWeek.getTime() > 21 * 24 * 60 * 60 * 1000;
   type FallbackAreaRow = {
     zip: string;
     city: string;
@@ -604,6 +628,46 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 Export growth CSV
               </a>
             </div>
+
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                <p className="text-sm text-muted-foreground">Tracking health</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {totalFilteredBookings === 0
+                    ? "No data"
+                    : unknownSourcePct >= 40
+                      ? "Needs attention"
+                      : "Healthy"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                <p className="text-sm text-muted-foreground">Tagged bookings</p>
+                <p className="mt-1 text-lg font-semibold">{taggedPct}%</p>
+              </div>
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                <p className="text-sm text-muted-foreground">Unknown source share</p>
+                <p className="mt-1 text-lg font-semibold">{unknownSourcePct}%</p>
+              </div>
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                <p className="text-sm text-muted-foreground">Latest attribution week</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {freshestGrowthWeek ? freshestGrowthWeek.toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+            </div>
+
+            {staleTracking ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                Attribution looks stale (latest week is older than 21 days). Check that current
+                bookings are passing UTM/referrer metadata through checkout + webhook.
+              </div>
+            ) : null}
+            {!freshestGrowthWeek && latestJobCreatedAt ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+                Jobs exist (latest {latestJobCreatedAt.toLocaleDateString()}) but attribution
+                rows are empty. Confirm migration `030` is applied on this Supabase project.
+              </div>
+            ) : null}
 
             {recentGrowthRows.length > 0 && unknownSourcePct >= 40 ? (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
