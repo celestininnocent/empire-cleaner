@@ -13,6 +13,7 @@ import {
 import { siteConfig } from "@/config/site";
 import { getPropertyTypeLabel } from "@/lib/property-types";
 import { getServiceTierShortLabel } from "@/lib/service-tiers";
+import { formatUsd } from "@/lib/pricing";
 import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
@@ -223,6 +224,53 @@ export default async function AdminPage() {
   );
   const claimProfileMap = Object.fromEntries((claimProfiles ?? []).map((p) => [p.id, p]));
 
+  type NeighborhoodWeeklyRow = {
+    week_start: string;
+    city: string;
+    state: string;
+    zip: string;
+    utm_source: string;
+    utm_medium: string;
+    utm_campaign: string;
+    bookings_count: number;
+    booked_revenue_cents: number;
+    avg_ticket_cents: number;
+    completed_count: number;
+    cancelled_count: number;
+  };
+
+  const { data: neighborhoodRaw } = await supabase
+    .from("neighborhood_demand_weekly")
+    .select("*")
+    .order("week_start", { ascending: false })
+    .limit(300);
+
+  const neighborhoodRows = (neighborhoodRaw ?? []) as NeighborhoodWeeklyRow[];
+  const recentGrowthRows = neighborhoodRows.slice(0, 120);
+  const topNeighborhoods = [...recentGrowthRows]
+    .sort((a, b) => b.bookings_count - a.bookings_count)
+    .slice(0, 12);
+  const topCampaigns = [...recentGrowthRows]
+    .filter((r) => r.utm_campaign && r.utm_campaign !== "(none)")
+    .sort((a, b) => b.bookings_count - a.bookings_count)
+    .slice(0, 12);
+  const growthTotals = recentGrowthRows.reduce(
+    (acc, row) => {
+      acc.bookings += row.bookings_count;
+      acc.revenueCents += Number(row.booked_revenue_cents) || 0;
+      acc.completed += row.completed_count;
+      acc.cancelled += row.cancelled_count;
+      return acc;
+    },
+    { bookings: 0, revenueCents: 0, completed: 0, cancelled: 0 }
+  );
+  const completionRate = growthTotals.bookings
+    ? Math.round((growthTotals.completed / growthTotals.bookings) * 100)
+    : 0;
+  const cancellationRate = growthTotals.bookings
+    ? Math.round((growthTotals.cancelled / growthTotals.bookings) * 100)
+    : 0;
+
   return (
     <SiteShell>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -363,6 +411,121 @@ export default async function AdminPage() {
                 Open SMS ops
               </Link>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8 border-border/80">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Users className="size-5 text-primary" />
+              Growth &amp; neighborhoods
+            </CardTitle>
+            <CardDescription>
+              Last 120 weekly rows from attribution: demand, revenue, and campaign quality by area.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {recentGrowthRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No attribution data yet. After new bookings come in, this fills automatically from{" "}
+                <code>neighborhood_demand_weekly</code>.
+              </p>
+            ) : (
+              <>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-sm text-muted-foreground">Bookings (sample)</p>
+                    <p className="mt-1 text-2xl font-semibold">{growthTotals.bookings}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-sm text-muted-foreground">Revenue (sample)</p>
+                    <p className="mt-1 text-2xl font-semibold">{formatUsd(growthTotals.revenueCents)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-sm text-muted-foreground">Completion rate</p>
+                    <p className="mt-1 text-2xl font-semibold">{completionRate}%</p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-sm text-muted-foreground">Cancellation rate</p>
+                    <p className="mt-1 text-2xl font-semibold">{cancellationRate}%</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="overflow-x-auto">
+                    <p className="mb-2 text-sm font-medium">Top neighborhoods by bookings</p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Area</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead className="text-right">Bookings</TableHead>
+                          <TableHead className="text-right">Revenue</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {topNeighborhoods.map((r) => (
+                          <TableRow key={`${r.week_start}:${r.zip}:${r.utm_source}:${r.utm_campaign}`}>
+                            <TableCell>
+                              <div className="font-medium">{r.zip}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {r.city}, {r.state}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{r.utm_source}</TableCell>
+                            <TableCell className="text-right font-medium">{r.bookings_count}</TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatUsd(Number(r.booked_revenue_cents) || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <p className="mb-2 text-sm font-medium">Top campaigns by bookings</p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Campaign</TableHead>
+                          <TableHead>Area</TableHead>
+                          <TableHead className="text-right">Bookings</TableHead>
+                          <TableHead className="text-right">Avg ticket</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {topCampaigns.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-muted-foreground">
+                              No campaign-tagged rows yet. Add UTM campaign params in ad links.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          topCampaigns.map((r) => (
+                            <TableRow key={`${r.week_start}:${r.utm_campaign}:${r.zip}`}>
+                              <TableCell className="max-w-[200px]">
+                                <div className="line-clamp-1 font-medium">{r.utm_campaign}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {r.utm_source} / {r.utm_medium}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {r.zip} · {r.city}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{r.bookings_count}</TableCell>
+                              <TableCell className="text-right text-sm">
+                                {formatUsd(Math.round(Number(r.avg_ticket_cents) || 0))}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
