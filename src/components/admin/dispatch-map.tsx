@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 import { defaultServiceMapCenter, haversineMiles } from "@/lib/geo";
 
@@ -60,11 +60,39 @@ export function DispatchMap({
   teams: MapTeam[];
 }) {
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const [deviceLocation, setDeviceLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled) return;
+        setDeviceLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => {
+        // Keep map functional if permission is denied.
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 45_000,
+        timeout: 20_000,
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const markers = useMemo(() => {
     const anchors = teams.length
       ? teams.map((t) => ({ lat: t.base_lat, lng: t.base_lng }))
-      : [defaultCenter];
+      : deviceLocation
+        ? [deviceLocation]
+        : [defaultCenter];
     const isPlausible = (lat: number, lng: number) =>
       anchors.some(
         (a) =>
@@ -90,10 +118,21 @@ export function DispatchMap({
       title: t.name,
       kind: "team" as const,
     }));
-    return [...teamMarkers, ...jobMarkers];
-  }, [jobs, teams]);
+    const meMarker = deviceLocation
+      ? [
+          {
+            id: "device-you",
+            position: deviceLocation,
+            title: "You",
+            kind: "you" as const,
+          },
+        ]
+      : [];
+    return [...meMarker, ...teamMarkers, ...jobMarkers];
+  }, [jobs, teams, deviceLocation]);
 
   const mapCenter = useMemo(() => {
+    if (deviceLocation) return deviceLocation;
     const firstTeam = teams[0];
     if (firstTeam) {
       return { lat: firstTeam.base_lat, lng: firstTeam.base_lng };
@@ -103,7 +142,7 @@ export function DispatchMap({
       return { lat: firstJobWithCoords.lat, lng: firstJobWithCoords.lng };
     }
     return defaultCenter;
-  }, [jobs, teams]);
+  }, [jobs, teams, deviceLocation]);
 
   if (!key) {
     return (
@@ -159,6 +198,8 @@ export function DispatchMap({
                 className={
                   m.kind === "team"
                     ? "size-3 rounded-full border-2 border-white bg-primary shadow-md"
+                    : m.kind === "you"
+                      ? "size-3.5 rounded-full border-2 border-white bg-blue-600 shadow-md ring-2 ring-blue-400/40"
                     : "size-3 rounded-full border-2 border-white bg-amber-500 shadow-md"
                 }
               />
