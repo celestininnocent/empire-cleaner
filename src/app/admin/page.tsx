@@ -41,7 +41,11 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+type AdminPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return (
       <SiteShell>
@@ -239,6 +243,7 @@ export default async function AdminPage() {
     completed_count: number;
     cancelled_count: number;
   };
+  type GrowthRange = "4w" | "8w" | "12w" | "ytd";
 
   const { data: neighborhoodRaw } = await supabase
     .from("neighborhood_demand_weekly")
@@ -247,7 +252,58 @@ export default async function AdminPage() {
     .limit(300);
 
   const neighborhoodRows = (neighborhoodRaw ?? []) as NeighborhoodWeeklyRow[];
-  const recentGrowthRows = neighborhoodRows.slice(0, 120);
+  const resolvedSearch = (await searchParams) ?? {};
+  const firstParam = (key: string): string => {
+    const raw = resolvedSearch[key];
+    if (Array.isArray(raw)) return raw[0] ?? "";
+    return raw ?? "";
+  };
+  const rangeParam = firstParam("range");
+  const range: GrowthRange =
+    rangeParam === "4w" || rangeParam === "8w" || rangeParam === "12w" || rangeParam === "ytd"
+      ? rangeParam
+      : "8w";
+  const sourceFilter = firstParam("source").trim();
+  const campaignFilter = firstParam("campaign").trim();
+  const zipFilter = firstParam("zip").trim();
+
+  const nowGrowth = new Date();
+  const rangeStart = (() => {
+    if (range === "ytd") return new Date(Date.UTC(nowGrowth.getUTCFullYear(), 0, 1));
+    const weeks = range === "4w" ? 4 : range === "12w" ? 12 : 8;
+    return new Date(nowGrowth.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
+  })();
+
+  const rowsInRange = neighborhoodRows.filter((r) => new Date(r.week_start) >= rangeStart);
+  const filteredGrowthRows = rowsInRange.filter((r) => {
+    if (sourceFilter && r.utm_source !== sourceFilter) return false;
+    if (campaignFilter && r.utm_campaign !== campaignFilter) return false;
+    if (zipFilter && r.zip !== zipFilter) return false;
+    return true;
+  });
+
+  const buildGrowthHref = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams();
+    params.set("range", range);
+    if (sourceFilter) params.set("source", sourceFilter);
+    if (campaignFilter) params.set("campaign", campaignFilter);
+    if (zipFilter) params.set("zip", zipFilter);
+    for (const [k, v] of Object.entries(updates)) {
+      if (v == null || v === "") params.delete(k);
+      else params.set(k, v);
+    }
+    return `/admin?${params.toString()}#growth-neighborhoods`;
+  };
+
+  const unknownSourceBookings = filteredGrowthRows
+    .filter((r) => r.utm_source === "(direct)" || r.utm_source === "(none)")
+    .reduce((acc, r) => acc + r.bookings_count, 0);
+  const totalFilteredBookings = filteredGrowthRows.reduce((acc, r) => acc + r.bookings_count, 0);
+  const unknownSourcePct = totalFilteredBookings
+    ? Math.round((unknownSourceBookings / totalFilteredBookings) * 100)
+    : 0;
+
+  const recentGrowthRows = filteredGrowthRows.slice(0, 120);
   type FallbackAreaRow = {
     zip: string;
     city: string;
@@ -284,8 +340,18 @@ export default async function AdminPage() {
   );
   const topFallbackNeighborhoods = fallbackByArea.slice(0, 12);
   const topNeighborhoods = [...recentGrowthRows]
-    .sort((a, b) => b.bookings_count - a.bookings_count)
-    .slice(0, 12);
+    .sort((a, b) => {
+      const aScore =
+        a.bookings_count * 100 + a.completed_count * 20 - a.cancelled_count * 35;
+      const bScore =
+        b.bookings_count * 100 + b.completed_count * 20 - b.cancelled_count * 35;
+      return bScore - aScore;
+    })
+    .slice(0, 12)
+    .map((r) => ({
+      ...r,
+      neighborhood_score: r.bookings_count * 100 + r.completed_count * 20 - r.cancelled_count * 35,
+    }));
   const topCampaigns = [...recentGrowthRows]
     .filter((r) => r.utm_campaign && r.utm_campaign !== "(none)")
     .sort((a, b) => b.bookings_count - a.bookings_count)
@@ -457,17 +523,64 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="mt-8 border-border/80">
+        <Card id="growth-neighborhoods" className="mt-8 scroll-mt-24 border-border/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="size-5 text-primary" />
               Growth &amp; neighborhoods
             </CardTitle>
             <CardDescription>
-              Last 120 weekly rows from attribution: demand, revenue, and campaign quality by area.
+              Attribution demand and campaign quality by area.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                {([
+                  ["4w", "Last 4w"],
+                  ["8w", "Last 8w"],
+                  ["12w", "Last 12w"],
+                  ["ytd", "YTD"],
+                ] as const).map(([id, label]) => (
+                  <Link
+                    key={id}
+                    href={buildGrowthHref({ range: id })}
+                    className={cn(
+                      buttonVariants({ size: "sm", variant: range === id ? "default" : "outline" })
+                    )}
+                  >
+                    {label}
+                  </Link>
+                ))}
+                {(sourceFilter || campaignFilter || zipFilter) ? (
+                  <Link
+                    href={buildGrowthHref({ source: null, campaign: null, zip: null })}
+                    className={cn(buttonVariants({ size: "sm", variant: "ghost" }))}
+                  >
+                    Clear filters
+                  </Link>
+                ) : null}
+              </div>
+              <a
+                href={`/api/admin/exports/growth?range=${encodeURIComponent(range)}${
+                  sourceFilter ? `&source=${encodeURIComponent(sourceFilter)}` : ""
+                }${campaignFilter ? `&campaign=${encodeURIComponent(campaignFilter)}` : ""}${
+                  zipFilter ? `&zip=${encodeURIComponent(zipFilter)}` : ""
+                }`}
+                className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+              >
+                <Download className="size-4" />
+                Export growth CSV
+              </a>
+            </div>
+
+            {recentGrowthRows.length > 0 && unknownSourcePct >= 40 ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+                {unknownSourcePct}% of bookings in this range are missing campaign source tags
+                (`(direct)` / `(none)`). Check ad links for UTM parameters.
+              </div>
+            ) : null}
+
             {recentGrowthRows.length === 0 ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
@@ -549,7 +662,7 @@ export default async function AdminPage() {
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="overflow-x-auto">
-                    <p className="mb-2 text-sm font-medium">Top neighborhoods by bookings</p>
+                    <p className="mb-2 text-sm font-medium">Top neighborhoods (score-ranked)</p>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -557,6 +670,7 @@ export default async function AdminPage() {
                           <TableHead>Source</TableHead>
                           <TableHead className="text-right">Bookings</TableHead>
                           <TableHead className="text-right">Revenue</TableHead>
+                          <TableHead className="text-right">Score</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -568,10 +682,20 @@ export default async function AdminPage() {
                                 {r.city}, {r.state}
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{r.utm_source}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              <Link
+                                href={buildGrowthHref({ source: r.utm_source })}
+                                className="underline-offset-4 hover:underline"
+                              >
+                                {r.utm_source}
+                              </Link>
+                            </TableCell>
                             <TableCell className="text-right font-medium">{r.bookings_count}</TableCell>
                             <TableCell className="text-right text-sm">
                               {formatUsd(Number(r.booked_revenue_cents) || 0)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium">
+                              {r.neighborhood_score}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -601,13 +725,30 @@ export default async function AdminPage() {
                           topCampaigns.map((r) => (
                             <TableRow key={`${r.week_start}:${r.utm_campaign}:${r.zip}`}>
                               <TableCell className="max-w-[200px]">
-                                <div className="line-clamp-1 font-medium">{r.utm_campaign}</div>
+                                <Link
+                                  href={buildGrowthHref({ campaign: r.utm_campaign })}
+                                  className="line-clamp-1 font-medium underline-offset-4 hover:underline"
+                                >
+                                  {r.utm_campaign}
+                                </Link>
                                 <div className="text-xs text-muted-foreground">
-                                  {r.utm_source} / {r.utm_medium}
+                                  <Link
+                                    href={buildGrowthHref({ source: r.utm_source })}
+                                    className="underline-offset-4 hover:underline"
+                                  >
+                                    {r.utm_source}
+                                  </Link>{" "}
+                                  / {r.utm_medium}
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">
-                                {r.zip} · {r.city}
+                                <Link
+                                  href={buildGrowthHref({ zip: r.zip })}
+                                  className="underline-offset-4 hover:underline"
+                                >
+                                  {r.zip}
+                                </Link>{" "}
+                                · {r.city}
                               </TableCell>
                               <TableCell className="text-right font-medium">{r.bookings_count}</TableCell>
                               <TableCell className="text-right text-sm">
