@@ -144,22 +144,46 @@ export async function POST(request: Request) {
 
     const stripeCustomerId =
       typeof session.customer === "string" ? session.customer : null;
+    const attributionFirstSeenAt = new Date().toISOString();
+    const checkoutStartedAt =
+      typeof meta.checkout_started_at === "string" && meta.checkout_started_at.trim()
+        ? meta.checkout_started_at
+        : attributionFirstSeenAt;
+    const attributionMeta = {
+      utm_source: String(meta.utm_source ?? "").slice(0, 120),
+      utm_medium: String(meta.utm_medium ?? "").slice(0, 120),
+      utm_campaign: String(meta.utm_campaign ?? "").slice(0, 120),
+      utm_content: String(meta.utm_content ?? "").slice(0, 120),
+      utm_term: String(meta.utm_term ?? "").slice(0, 120),
+      referrer_url: String(meta.referrer_url ?? "").slice(0, 500),
+      referrer_host: String(meta.referrer_host ?? "").slice(0, 200),
+      landing_path: String(meta.landing_path ?? "").slice(0, 300),
+    };
 
     let customerId: string | null = null;
     const existing = await admin
       .from("customers")
-      .select("id")
+      .select("id, first_touch_utm_source, first_touch_referrer_url, first_touch_landing_path")
       .eq("profile_id", userId)
       .maybeSingle();
 
     if (existing.data?.id) {
       customerId = existing.data.id;
-      if (stripeCustomerId) {
-        await admin
-          .from("customers")
-          .update({ stripe_customer_id: stripeCustomerId })
-          .eq("id", customerId);
-      }
+      await admin
+        .from("customers")
+        .update({
+          stripe_customer_id: stripeCustomerId,
+          last_touch_utm_source: attributionMeta.utm_source || null,
+          last_touch_utm_medium: attributionMeta.utm_medium || null,
+          last_touch_utm_campaign: attributionMeta.utm_campaign || null,
+          last_touch_utm_content: attributionMeta.utm_content || null,
+          last_touch_utm_term: attributionMeta.utm_term || null,
+          last_touch_referrer_url: attributionMeta.referrer_url || null,
+          last_touch_referrer_host: attributionMeta.referrer_host || null,
+          last_touch_landing_path: attributionMeta.landing_path || null,
+          attribution_last_seen_at: checkoutStartedAt,
+        })
+        .eq("id", customerId);
     } else {
       const { data: created, error: createErr } = await admin
         .from("customers")
@@ -172,6 +196,24 @@ export async function POST(request: Request) {
           state: meta.state,
           lat: null,
           lng: null,
+          first_touch_utm_source: attributionMeta.utm_source || null,
+          first_touch_utm_medium: attributionMeta.utm_medium || null,
+          first_touch_utm_campaign: attributionMeta.utm_campaign || null,
+          first_touch_utm_content: attributionMeta.utm_content || null,
+          first_touch_utm_term: attributionMeta.utm_term || null,
+          first_touch_referrer_url: attributionMeta.referrer_url || null,
+          first_touch_referrer_host: attributionMeta.referrer_host || null,
+          first_touch_landing_path: attributionMeta.landing_path || null,
+          last_touch_utm_source: attributionMeta.utm_source || null,
+          last_touch_utm_medium: attributionMeta.utm_medium || null,
+          last_touch_utm_campaign: attributionMeta.utm_campaign || null,
+          last_touch_utm_content: attributionMeta.utm_content || null,
+          last_touch_utm_term: attributionMeta.utm_term || null,
+          last_touch_referrer_url: attributionMeta.referrer_url || null,
+          last_touch_referrer_host: attributionMeta.referrer_host || null,
+          last_touch_landing_path: attributionMeta.landing_path || null,
+          attribution_first_seen_at: attributionFirstSeenAt,
+          attribution_last_seen_at: checkoutStartedAt,
         })
         .select("id")
         .single();
@@ -285,6 +327,14 @@ export async function POST(request: Request) {
           const s = String(raw).trim();
           return s.length ? s.slice(0, 500) : null;
         })(),
+        checkout_started_at: checkoutStartedAt,
+        utm_source: attributionMeta.utm_source || null,
+        utm_medium: attributionMeta.utm_medium || null,
+        utm_campaign: attributionMeta.utm_campaign || null,
+        utm_content: attributionMeta.utm_content || null,
+        utm_term: attributionMeta.utm_term || null,
+        referrer_host: attributionMeta.referrer_host || null,
+        landing_path: attributionMeta.landing_path || null,
       })
       .select("id")
       .single();

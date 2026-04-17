@@ -4,6 +4,7 @@ import type { ServiceTierId } from "@/lib/service-tiers";
 import { SERVICE_TIERS } from "@/lib/service-tiers";
 import type { AddOnId } from "@/lib/add-ons";
 import { normalizeAddOnIds } from "@/lib/add-ons";
+import { sanitizeAttributionInput, type AttributionPayload } from "@/lib/attribution";
 
 const PROPERTY_IDS = new Set<PropertyTypeId>(PROPERTY_TYPES.map((p) => p.id));
 const SERVICE_TIER_IDS = new Set<ServiceTierId>(SERVICE_TIERS.map((t) => t.id));
@@ -28,6 +29,7 @@ export type CheckoutBody = {
   customerEmail: string;
   customerPhone: string;
   customerFullName: string;
+  attribution: AttributionPayload;
 };
 
 function isNonEmptyString(v: unknown, max: number): v is string {
@@ -137,6 +139,12 @@ export function parseCheckoutBody(json: unknown): { ok: true; body: CheckoutBody
     return { ok: false, error: "Full name must be 2–120 characters." };
   }
 
+  const attribution = sanitizeAttributionInput(
+    o.attribution && typeof o.attribution === "object"
+      ? (o.attribution as Partial<AttributionPayload>)
+      : {}
+  );
+
   let frequency: "weekly" | "biweekly" | "monthly" = "monthly";
   if (bookingType === "recurring") {
     const f = o.frequency;
@@ -166,6 +174,7 @@ export function parseCheckoutBody(json: unknown): { ok: true; body: CheckoutBody
       customerEmail: emailRaw,
       customerPhone: phoneRaw,
       customerFullName: nameRaw,
+      attribution,
     },
   };
 }

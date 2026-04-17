@@ -36,6 +36,12 @@ export default function PrivacyPage() {
               For crew members, tax and payroll information may be processed via payroll providers
               such as Gusto.
             </p>
+            <p className="text-muted-foreground">
+              We also collect marketing attribution and product analytics data to improve service
+              coverage and customer experience, including referral source, campaign parameters
+              (UTM tags), landing page path, city/state/ZIP demand trends, and booking funnel
+              events (for example, checkout started and completed).
+            </p>
           </section>
 
           <section className="space-y-2">

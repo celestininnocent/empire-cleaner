@@ -8,6 +8,7 @@ import { getServiceTierShortLabel } from "@/lib/service-tiers";
 import { getAddOnLabel } from "@/lib/add-ons";
 import { assertBrowserSameOriginPost } from "@/lib/security/same-origin";
 import { parseCheckoutBody } from "@/lib/security/validate-checkout-body";
+import { getReferrerHost } from "@/lib/attribution";
 
 const intervalMap = {
   weekly: { interval: "week" as const, interval_count: 1 },
@@ -40,6 +41,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
     const body = parsed.body;
+    const attribution = body.attribution;
+    const checkoutStartedAt = new Date().toISOString();
+    const referrerHost = getReferrerHost(attribution.referrerUrl);
+    const userAgent = (request.headers.get("user-agent") ?? "").slice(0, 500);
 
     const priceCents = calculateJobPriceCents({
       bedrooms: body.bedrooms,
@@ -122,6 +127,16 @@ export async function POST(request: Request) {
       booking_type: bookingType,
       customer_notes: body.customerNotes || "",
       add_on_ids: body.addOnIds.join(","),
+      checkout_started_at: checkoutStartedAt,
+      utm_source: attribution.utmSource,
+      utm_medium: attribution.utmMedium,
+      utm_campaign: attribution.utmCampaign,
+      utm_content: attribution.utmContent,
+      utm_term: attribution.utmTerm,
+      referrer_url: attribution.referrerUrl,
+      referrer_host: referrerHost,
+      landing_path: attribution.landingPath,
+      user_agent: userAgent,
     };
 
     if (bookingType === "once") {

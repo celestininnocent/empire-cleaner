@@ -11,6 +11,7 @@ import { ADD_ONS, getAddOnsTotalCents, type AddOnId } from "@/lib/add-ons";
 import { siteConfig } from "@/config/site";
 import { syncProfilePhoneFromUserMetadata } from "@/lib/profile-phone-sync";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
+import { sanitizeAttributionInput, type AttributionPayload } from "@/lib/attribution";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,6 +39,15 @@ const frequencies = [
 ] as const;
 
 export function BookingForm() {
+  const [attribution, setAttribution] = useState<AttributionPayload>({
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    utmContent: "",
+    utmTerm: "",
+    referrerUrl: "",
+    landingPath: "",
+  });
   const [bookingType, setBookingType] = useState<"once" | "recurring">("once");
   const [propertyType, setPropertyType] = useState<PropertyTypeId>("residential");
   const [serviceTier, setServiceTier] = useState<ServiceTierId>("standard");
@@ -81,6 +91,62 @@ export function BookingForm() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = "ec_attribution_v1";
+    const params = new URLSearchParams(window.location.search);
+    const incoming = sanitizeAttributionInput({
+      utmSource: params.get("utm_source") ?? "",
+      utmMedium: params.get("utm_medium") ?? "",
+      utmCampaign: params.get("utm_campaign") ?? "",
+      utmContent: params.get("utm_content") ?? "",
+      utmTerm: params.get("utm_term") ?? "",
+      referrerUrl: document.referrer ?? "",
+      landingPath: `${window.location.pathname}${window.location.search}`.slice(0, 300),
+    });
+    let firstTouch: AttributionPayload | null = null;
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        firstTouch = sanitizeAttributionInput(JSON.parse(raw) as Partial<AttributionPayload>);
+      }
+    } catch {
+      firstTouch = null;
+    }
+    const hasIncomingUtm = Boolean(
+      incoming.utmSource ||
+      incoming.utmMedium ||
+      incoming.utmCampaign ||
+      incoming.utmContent ||
+      incoming.utmTerm
+    );
+    if (!firstTouch) {
+      const base = hasIncomingUtm ? incoming : sanitizeAttributionInput({
+        referrerUrl: incoming.referrerUrl,
+        landingPath: incoming.landingPath,
+      });
+      firstTouch = base;
+      try {
+        window.localStorage.setItem(key, JSON.stringify(base));
+      } catch {
+        // Ignore write failures (private mode / blocked storage).
+      }
+    } else if (hasIncomingUtm) {
+      // Keep original first-touch; only refresh on explicit campaign UTMs.
+      const updated = sanitizeAttributionInput({
+        ...firstTouch,
+        ...incoming,
+      });
+      firstTouch = updated;
+      try {
+        window.localStorage.setItem(key, JSON.stringify(updated));
+      } catch {
+        // Ignore write failures.
+      }
+    }
+    setAttribution(firstTouch);
   }, []);
 
   const priceCents = useMemo(() => {
@@ -132,6 +198,7 @@ export function BookingForm() {
           customerEmail: customerEmail.trim(),
           customerPhone: customerPhone.trim(),
           customerFullName: customerFullName.trim(),
+          attribution,
           scheduledStart: scheduledStart
             ? new Date(scheduledStart).toISOString()
             : new Date().toISOString(),
