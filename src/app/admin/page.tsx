@@ -45,6 +45,37 @@ type AdminPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function titleCaseWords(value: string): string {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeAreaLabel(city: string, state: string, zip: string): {
+  primary: string;
+  secondary: string;
+} {
+  const cityClean = titleCaseWords((city ?? "").trim().replace(/\s+/g, " "));
+  const stateRaw = (state ?? "").trim();
+  const stateClean =
+    stateRaw.length <= 3 ? stateRaw.toUpperCase() : titleCaseWords(stateRaw);
+  const zipClean = (zip ?? "").trim().replace(/\s+/g, " ");
+
+  const hasCity = cityClean && cityClean.toLowerCase() !== "unknown";
+  const hasState = stateClean && stateClean.toLowerCase() !== "unknown";
+  const hasZip = zipClean && zipClean.toLowerCase() !== "unknown";
+
+  const primary = hasZip ? zipClean : "Area unknown";
+  const location = [hasCity ? cityClean : "", hasState ? stateClean : ""]
+    .filter(Boolean)
+    .join(", ");
+  const secondary = location || (hasZip ? "Location pending" : "Missing city/state/ZIP");
+  return { primary, secondary };
+}
+
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return (
@@ -607,6 +638,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         </TableRow>
                       ) : (
                         topFallbackNeighborhoods.map((r) => {
+                          const area = normalizeAreaLabel(r.city, r.state, r.zip);
                           const completion =
                             r.bookings_count > 0
                               ? Math.round((r.completed_count / r.bookings_count) * 100)
@@ -618,10 +650,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                           return (
                             <TableRow key={`${r.zip}:${r.city}:${r.state}`}>
                               <TableCell>
-                                <div className="font-medium">{r.zip}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {r.city}, {r.state}
-                                </div>
+                                <div className="font-medium">{area.primary}</div>
+                                <div className="text-xs text-muted-foreground">{area.secondary}</div>
                               </TableCell>
                               <TableCell className="text-right font-medium">
                                 {r.bookings_count}
@@ -677,10 +707,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         {topNeighborhoods.map((r) => (
                           <TableRow key={`${r.week_start}:${r.zip}:${r.utm_source}:${r.utm_campaign}`}>
                             <TableCell>
-                              <div className="font-medium">{r.zip}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {r.city}, {r.state}
-                              </div>
+                              {(() => {
+                                const area = normalizeAreaLabel(r.city, r.state, r.zip);
+                                return (
+                                  <>
+                                    <div className="font-medium">{area.primary}</div>
+                                    <div className="text-xs text-muted-foreground">{area.secondary}</div>
+                                  </>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               <Link
@@ -742,13 +777,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">
+                                {(() => {
+                                  const area = normalizeAreaLabel(r.city, r.state, r.zip);
+                                  return (
+                                    <>
                                 <Link
                                   href={buildGrowthHref({ zip: r.zip })}
                                   className="underline-offset-4 hover:underline"
                                 >
-                                  {r.zip}
+                                      {area.primary}
                                 </Link>{" "}
-                                · {r.city}
+                                    · {area.secondary}
+                                  </>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell className="text-right font-medium">{r.bookings_count}</TableCell>
                               <TableCell className="text-right text-sm">
