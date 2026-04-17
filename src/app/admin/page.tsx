@@ -5,6 +5,7 @@ import {
   Banknote,
   Clock3,
   Download,
+  LineChart,
   MapPinned,
   MessageCircle,
   Route,
@@ -336,6 +337,13 @@ export default async function AdminPage() {
               <MessageCircle className="size-4" />
               SMS templates
             </Link>
+            <Link
+              href="#growth-neighborhoods"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              <LineChart className="size-4" />
+              Growth
+            </Link>
             <a
               href="/api/admin/exports/customers"
               className={cn(buttonVariants({ variant: "outline" }))}
@@ -407,7 +415,7 @@ export default async function AdminPage() {
           </Card>
         </div>
 
-        <Card className="mt-8 border-border/80">
+        <Card id="growth-neighborhoods" className="mt-8 scroll-mt-24 border-border/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <AlertTriangle className="size-5 text-primary" />
