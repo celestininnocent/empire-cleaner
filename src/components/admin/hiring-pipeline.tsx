@@ -33,7 +33,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
 import { friendlyFetchFailureMessage } from "@/lib/network-error";
-import { TEAMS_SEED_SQL } from "@/config/teams-seed-sql";
 import {
   matchTeamIdByApplicantZip,
   normalizeZipKey,
@@ -386,37 +385,14 @@ export function HiringPipeline({
         </p>
       ) : null}
       {teams.length === 0 ? (
-        <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+        <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
           <p className="font-medium">
-            No crews in the database yet — granting access can’t run until Supabase has at least one
-            row in <code className="rounded bg-background/60 px-1 py-0.5 text-xs">public.teams</code>.
-            This isn’t automatic: routes need a base ZIP and map coordinates for dispatch.
+            No crews yet. Granting access will automatically create a starter crew using the
+            applicant ZIP.
           </p>
-          <p className="text-xs leading-relaxed opacity-90">
-            In{" "}
-            <strong className="font-medium">Supabase Dashboard → SQL Editor</strong>, paste the
-            script below and click <strong>Run</strong>. Then refresh this page.
+          <p className="text-xs text-muted-foreground">
+            Review the generated team ZIP/base in Owner dashboard after granting, then adjust if needed.
           </p>
-          <pre className="max-h-48 overflow-auto rounded-md border border-amber-500/30 bg-background/90 p-3 text-left text-[11px] leading-snug font-mono text-foreground shadow-inner">
-            {TEAMS_SEED_SQL}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="border-amber-600/40 bg-background/80 text-amber-950 hover:bg-amber-500/20 dark:text-amber-50"
-              onClick={() => {
-                void navigator.clipboard.writeText(TEAMS_SEED_SQL);
-              }}
-            >
-              Copy SQL
-            </Button>
-            <span className="text-[11px] text-muted-foreground self-center">
-              Repo file: <code className="rounded bg-muted px-1">supabase/seed_demo.sql</code> (same
-              inserts)
-            </span>
-          </div>
         </div>
       ) : null}
       <Card className="border-border/80">
@@ -556,30 +532,13 @@ export function HiringPipeline({
                           "hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                           "disabled:cursor-wait disabled:opacity-80",
                           "touch-manipulation select-none",
-                          teams.length === 0 && busy !== `crew-${a.id}`
-                            ? "cursor-pointer opacity-95 ring-2 ring-amber-500/50"
-                            : null
+                          null
                         )}
                         aria-label={`Grant crew app access for ${a.email}`}
-                        title={
-                          teams.length === 0
-                            ? "Click for instructions — add a crew in Supabase first."
-                            : "Grants /field for this email. Crew follows ZIP when it matches a route; otherwise the default crew."
-                        }
+                        title="Grants /field for this email. Crew follows ZIP when it matches a route; otherwise the default crew."
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (teams.length === 0) {
-                            const msg =
-                              "No crews yet — paste the SQL from the yellow box above into Supabase SQL Editor, Run, then refresh.";
-                            flushSync(() => {
-                              setGrantBanner({ text: msg, tone: "error" });
-                              setError(msg);
-                              setSuccess(null);
-                              setCrewGrantLine((m) => ({ ...m, [a.id]: msg }));
-                            });
-                            return;
-                          }
                           flushSync(() => {
                             setError(null);
                             setSuccess(null);

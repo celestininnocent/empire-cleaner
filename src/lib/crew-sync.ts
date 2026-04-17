@@ -2,24 +2,34 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { authUserMatchesEmail } from "@/lib/supabase/find-auth-user-by-email";
 import { pickFallbackTeamId, resolveCrewTeamAssignment } from "@/lib/crew-team-matching";
+import { geocodeAddressLine } from "@/lib/geocode-google";
+import { approximateLatLngFromZip } from "@/lib/geo";
 
 /**
  * If there are no crews yet, create one default row so owners never have to run SQL in Supabase.
  * Hiring approval and /field can always resolve a `team_id`.
  */
-export async function ensureDefaultTeamExists(svc: SupabaseClient): Promise<void> {
+export async function ensureDefaultTeamExists(
+  svc: SupabaseClient,
+  options?: { preferredZip?: string | null; preferredName?: string | null }
+): Promise<void> {
   const { data: existing } = await svc.from("teams").select("id").limit(1).maybeSingle();
   if (existing?.id) return;
 
-  const fallbackZip = (process.env.NEXT_PUBLIC_DEFAULT_SERVICE_ZIP ?? "97209").trim() || "97209";
+  const preferredZip = options?.preferredZip?.trim() ?? "";
+  const fallbackZip = preferredZip || (process.env.NEXT_PUBLIC_DEFAULT_SERVICE_ZIP ?? "97209").trim() || "97209";
+  const geocoded = await geocodeAddressLine({ zip: fallbackZip });
+  const approx = approximateLatLngFromZip(fallbackZip);
   const fallbackLat = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LAT ?? "45.5231");
   const fallbackLng = Number.parseFloat(process.env.NEXT_PUBLIC_DEFAULT_SERVICE_LNG ?? "-122.6765");
+  const baseLat = geocoded?.lat ?? approx.lat ?? (Number.isFinite(fallbackLat) ? fallbackLat : 45.5231);
+  const baseLng = geocoded?.lng ?? approx.lng ?? (Number.isFinite(fallbackLng) ? fallbackLng : -122.6765);
 
   const { error } = await svc.from("teams").insert({
-    name: "Main crew",
+    name: options?.preferredName?.trim() || "Main crew",
     zip_code: fallbackZip,
-    base_lat: Number.isFinite(fallbackLat) ? fallbackLat : 45.5231,
-    base_lng: Number.isFinite(fallbackLng) ? fallbackLng : -122.6765,
+    base_lat: baseLat,
+    base_lng: baseLng,
     is_available: true,
   });
   if (error) {
@@ -198,7 +208,7 @@ export async function ensureDefaultCrewAccessForFieldUser(userId: string): Promi
 
   const { data: profile } = await svc
     .from("profiles")
-    .select("role")
+    .select("role, zip_code")
     .eq("id", userId)
     .maybeSingle();
 
@@ -212,7 +222,9 @@ export async function ensureDefaultCrewAccessForFieldUser(userId: string): Promi
 
   if (existing?.team_id) return;
 
-  await ensureDefaultTeamExists(svc);
+  await ensureDefaultTeamExists(svc, {
+    preferredZip: profile?.zip_code ?? null,
+  });
   const { data: teamRows } = await svc.from("teams").select("id, zip_code");
   const teams = teamRows ?? [];
   const { teamId: resolved } = resolveCrewTeamAssignment({

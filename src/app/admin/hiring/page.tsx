@@ -6,7 +6,6 @@ import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { ensureDefaultTeamExists } from "@/lib/crew-sync";
 import { buildProfileZipByEmailMap } from "@/lib/hiring-profile-zips";
 import { HiringPipeline } from "@/components/admin/hiring-pipeline";
 import { buttonVariants } from "@/components/ui/button";
@@ -31,9 +30,6 @@ export default async function HiringPage() {
   }
 
   const svc = createServiceRoleClient();
-  if (svc) {
-    await ensureDefaultTeamExists(svc);
-  }
   const { data: applicants } = svc
     ? await svc.from("applicants").select("*").order("created_at", { ascending: false })
     : { data: [] as Record<string, unknown>[] };

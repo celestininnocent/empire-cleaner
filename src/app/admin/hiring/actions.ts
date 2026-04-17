@@ -163,11 +163,13 @@ export async function approveApplicantForCrewAction(
     throw new Error(fetchErr?.message ?? "Applicant not found.");
   }
 
-  await ensureDefaultTeamExists(sb);
+  const zipForMatch = await zipForCrewResolution(sb, app);
+  await ensureDefaultTeamExists(sb, {
+    preferredZip: zipForMatch,
+    preferredName: zipForMatch?.trim() ? `Crew ${zipForMatch.trim()}` : "Main crew",
+  });
   const { data: teamRows } = await sb.from("teams").select("id, zip_code");
   const teams = teamRows ?? [];
-
-  const zipForMatch = await zipForCrewResolution(sb, app);
 
   const explicitRaw = teamId?.trim() ?? "";
   const explicitValid =
