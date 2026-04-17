@@ -247,6 +247,41 @@ export default async function AdminPage() {
 
   const neighborhoodRows = (neighborhoodRaw ?? []) as NeighborhoodWeeklyRow[];
   const recentGrowthRows = neighborhoodRows.slice(0, 120);
+  type FallbackAreaRow = {
+    zip: string;
+    city: string;
+    state: string;
+    bookings_count: number;
+    booked_revenue_cents: number;
+    completed_count: number;
+    cancelled_count: number;
+  };
+  const fallbackRecentJobs = (jobs ?? []).slice(0, 200);
+  const fallbackByAreaMap = fallbackRecentJobs.reduce<Map<string, FallbackAreaRow>>((acc, j) => {
+      const zip = (j.zip ?? "").trim() || "Unknown";
+      const city = (j.city ?? "").trim() || "Unknown";
+      const state = (j.state ?? "").trim() || "Unknown";
+      const key = `${zip}|${city}|${state}`;
+      const existing = acc.get(key) ?? {
+        zip,
+        city,
+        state,
+        bookings_count: 0,
+        booked_revenue_cents: 0,
+        completed_count: 0,
+        cancelled_count: 0,
+      };
+      existing.bookings_count += 1;
+      existing.booked_revenue_cents += Number(j.price_cents) || 0;
+      if (j.status === "completed") existing.completed_count += 1;
+      if (j.status === "cancelled") existing.cancelled_count += 1;
+      acc.set(key, existing);
+      return acc;
+    }, new Map<string, FallbackAreaRow>());
+  const fallbackByArea = Array.from(fallbackByAreaMap.values()).sort(
+    (a, b) => b.bookings_count - a.bookings_count
+  );
+  const topFallbackNeighborhoods = fallbackByArea.slice(0, 12);
   const topNeighborhoods = [...recentGrowthRows]
     .sort((a, b) => b.bookings_count - a.bookings_count)
     .slice(0, 12);
@@ -426,10 +461,63 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {recentGrowthRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No attribution data yet. After new bookings come in, this fills automatically from{" "}
-                <code>neighborhood_demand_weekly</code>.
-              </p>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  No attribution rows yet from <code>neighborhood_demand_weekly</code>. Showing
+                  fallback performance from recent jobs so you can still see active neighborhoods.
+                </p>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Area</TableHead>
+                        <TableHead className="text-right">Bookings</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead className="text-right">Completion</TableHead>
+                        <TableHead className="text-right">Cancellation</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {topFallbackNeighborhoods.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-muted-foreground">
+                            No jobs found yet in this project.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        topFallbackNeighborhoods.map((r) => {
+                          const completion =
+                            r.bookings_count > 0
+                              ? Math.round((r.completed_count / r.bookings_count) * 100)
+                              : 0;
+                          const cancellation =
+                            r.bookings_count > 0
+                              ? Math.round((r.cancelled_count / r.bookings_count) * 100)
+                              : 0;
+                          return (
+                            <TableRow key={`${r.zip}:${r.city}:${r.state}`}>
+                              <TableCell>
+                                <div className="font-medium">{r.zip}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {r.city}, {r.state}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {r.bookings_count}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">
+                                {formatUsd(r.booked_revenue_cents)}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">{completion}%</TableCell>
+                              <TableCell className="text-right text-sm">{cancellation}%</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             ) : (
               <>
                 <div className="grid gap-3 md:grid-cols-4">
