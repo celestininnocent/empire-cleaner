@@ -52,6 +52,48 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata ?? {};
 
+    if (meta.flow_type === "club") {
+      const profileId =
+        typeof meta.profile_id === "string" ? meta.profile_id.trim() : "";
+      const tier = typeof meta.club_tier === "string" ? meta.club_tier.trim() : "";
+      const subId =
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription?.id;
+      const stripeCustomerId =
+        typeof session.customer === "string" ? session.customer : null;
+
+      if (!profileId || (tier !== "basic" && tier !== "preferred") || !subId) {
+        return NextResponse.json({ received: true, club: false, error: "club_metadata_invalid" });
+      }
+
+      let periodEndIso: string | null = null;
+      try {
+        const sub = (await stripe.subscriptions.retrieve(subId)) as unknown;
+        const periodEnd = (sub as { current_period_end?: unknown })?.current_period_end;
+        periodEndIso =
+          typeof periodEnd === "number"
+            ? new Date(periodEnd * 1000).toISOString()
+            : null;
+      } catch (e) {
+        console.error("[stripe webhook] club subscription retrieve:", e);
+      }
+
+      await admin.from("club_memberships").upsert(
+        {
+          profile_id: profileId,
+          tier,
+          status: "active",
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: subId,
+          current_period_end: periodEndIso,
+        },
+        { onConflict: "profile_id" }
+      );
+
+      return NextResponse.json({ received: true, club: true });
+    }
+
     if (meta.flow_type === "tip") {
       const jobId = typeof meta.job_id === "string" ? meta.job_id.trim() : "";
       const paymentIntentId =

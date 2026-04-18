@@ -49,6 +49,12 @@ export default async function PortalPage({
     .eq("profile_id", user.id)
     .maybeSingle();
 
+  const { data: club } = await supabase
+    .from("club_memberships")
+    .select("tier, status, current_period_end")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
   if (!customer) {
     return (
       <SiteShell>
@@ -190,6 +196,14 @@ export default async function PortalPage({
           subscriptionPlanLabel={subscriptionPlanLabel}
           tipPaidSuccess={tipPaidSuccess}
           onboardingSavedSuccess={onboardingSavedSuccess}
+          clubMembership={
+            club?.status === "active"
+              ? {
+                  tier: club.tier as string,
+                  currentPeriodEnd: club.current_period_end ?? null,
+                }
+              : null
+          }
           onboardingProfile={
             customer
               ? {

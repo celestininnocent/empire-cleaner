@@ -61,6 +61,11 @@ type OnboardingProfile = {
   completedAt: string | null;
 };
 
+type ClubMembership = {
+  tier: string;
+  currentPeriodEnd: string | null;
+};
+
 function formatOnboardingAddress(p: OnboardingProfile): string {
   const line = [
     p.addressLine?.trim(),
@@ -147,6 +152,7 @@ export function CustomerPortal({
   tipPaidSuccess = false,
   onboardingSavedSuccess = false,
   onboardingProfile = null,
+  clubMembership = null,
 }: {
   initialJobs: JobRow[];
   cleanersByTeam: Record<string, CleanerPreview[]>;
@@ -160,6 +166,7 @@ export function CustomerPortal({
   tipPaidSuccess?: boolean;
   onboardingSavedSuccess?: boolean;
   onboardingProfile?: OnboardingProfile | null;
+  clubMembership?: ClubMembership | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -272,6 +279,18 @@ export function CustomerPortal({
         hasActiveSubscription={hasActiveSubscription}
         subscriptionPlanLabel={subscriptionPlanLabel}
       />
+      {clubMembership ? (
+        <p className="rounded-lg border border-primary/30 bg-primary/[0.06] px-4 py-2 text-sm text-foreground">
+          <span className="font-medium">Empire Club:</span>{" "}
+          {clubMembership.tier === "preferred" ? "Preferred" : "Basic"}
+          {clubMembership.currentPeriodEnd ? (
+            <span className="text-muted-foreground">
+              {" "}
+              · renews {new Date(clubMembership.currentPeriodEnd).toLocaleDateString()}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       {tipPaidSuccess ? (
         <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-900 dark:text-emerald-200">
           Tip payment successful. Thank you for supporting your crew.

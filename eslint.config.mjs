@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // One-off local admin scripts (Node runtime, not app runtime):
+    "scripts/**",
   ]),
 ]);
 
