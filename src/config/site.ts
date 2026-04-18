@@ -6,6 +6,9 @@
 const SUPPORT_PHONE_DISPLAY = "(503) 997-8018";
 const SUPPORT_PHONE_TEL = "+15039978018";
 
+/** Portfolio / B2B inquiries (property managers landing page mailto). */
+const PARTNERSHIPS_EMAIL = "Celestininnocentt@gmail.com";
+
 export const siteConfig = {
   businessName: "Empire Cleaner",
 
@@ -26,6 +29,9 @@ export const siteConfig = {
   /** Display and `tel:` href — support line for crew access, booking, and general help. */
   supportPhoneDisplay: SUPPORT_PHONE_DISPLAY,
   supportPhoneTel: SUPPORT_PHONE_TEL,
+
+  /** Growth & portfolio quote requests — `mailto:` on /property-managers. */
+  partnershipsEmail: PARTNERSHIPS_EMAIL,
 
   legalTermsTitle: "Terms of Service",
   legalPrivacyTitle: "Privacy Policy",
