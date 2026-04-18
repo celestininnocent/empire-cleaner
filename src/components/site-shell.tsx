@@ -81,6 +81,21 @@ export async function SiteShell({
           >
             {siteConfig.supportPhoneDisplay}
           </a>
+          <span className="text-border" aria-hidden>
+            ·
+          </span>
+          <Link href="/hosts" className="font-medium text-primary underline-offset-4 hover:underline">
+            Hosts &amp; STR
+          </Link>
+          <span className="text-border" aria-hidden>
+            ·
+          </span>
+          <Link
+            href="/property-managers"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Property managers
+          </Link>
         </p>
         <p className="mt-3">
           <Link
