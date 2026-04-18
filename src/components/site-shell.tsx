@@ -4,7 +4,7 @@ import { siteConfig } from "@/config/site";
 import { MobileNav } from "@/components/mobile-nav";
 import { SetupBanner } from "@/components/setup-banner";
 import { AuthHeaderActions } from "@/components/auth/auth-header-actions";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +22,7 @@ export async function SiteShell({
   children: React.ReactNode;
   cta?: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerUser();
   const userEmail = user?.email ?? null;
 
   return (

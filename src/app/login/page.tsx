@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/components/site-shell";
 import { LoginForm } from "@/components/auth/login-form";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { sanitizeInternalPath } from "@/lib/utils";
 
 export default async function LoginPage({
@@ -14,10 +14,7 @@ export default async function LoginPage({
   const sp = await searchParams;
   const nextPath = sanitizeInternalPath(sp.next, "/portal");
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (user) {
     redirect(nextPath);
   }

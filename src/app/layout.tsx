@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { siteConfig } from "@/config/site";
+import { supabasePreconnectOrigin } from "@/lib/supabase/preconnect-origin";
 import "./globals.css";
 
 /** Google Ads gtag (override via Vercel: NEXT_PUBLIC_GOOGLE_ADS_ID). */
@@ -12,11 +13,6 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -32,17 +28,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseOrigin = supabasePreconnectOrigin();
   return (
-    <html
-      lang="en"
-      className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+      <head>
+        {supabaseOrigin ? (
+          <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+        ) : null}
+      </head>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GOOGLE_ADS_ID)}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-ads-gtag" strategy="afterInteractive">
+        <Script id="google-ads-gtag" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -50,6 +45,10 @@ export default function RootLayout({
             gtag('config', ${JSON.stringify(GOOGLE_ADS_ID)});
           `}
         </Script>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GOOGLE_ADS_ID)}`}
+          strategy="lazyOnload"
+        />
         {children}
       </body>
     </html>

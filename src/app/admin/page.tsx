@@ -17,6 +17,7 @@ import { getServiceTierShortLabel } from "@/lib/service-tiers";
 import { formatUsd } from "@/lib/pricing";
 import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import { DispatchMap } from "@/components/admin/dispatch-map";
 import { DispatchControls } from "@/components/admin/dispatch-controls";
@@ -85,15 +86,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getServerUser();
   if (!user) {
     redirect("/login?next=/admin");
   }
 
+  const supabase = await createClient();
   const role = await getProfileRoleForUser(user.id);
 
   if (role !== "admin") {

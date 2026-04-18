@@ -4,6 +4,7 @@ import { ArrowLeft, Banknote, PiggyBank } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { haversineMiles } from "@/lib/geo";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import {
@@ -53,15 +54,12 @@ export default async function AdminFinancePage() {
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getServerUser();
   if (!user) {
     redirect("/login?next=/admin/finance");
   }
 
+  const supabase = await createClient();
   const role = await getProfileRoleForUser(user.id);
 
   if (role !== "admin") {

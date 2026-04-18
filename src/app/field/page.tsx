@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import {
@@ -86,15 +87,12 @@ export default async function FieldPage() {
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getServerUser();
   if (!user) {
     redirect("/login?next=/field");
   }
 
+  const supabase = await createClient();
   await syncCrewAccessForUser(user.id);
   await ensureDefaultCrewAccessForFieldUser(user.id);
 

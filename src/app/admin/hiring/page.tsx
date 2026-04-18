@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/components/site-shell";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { buildProfileZipByEmailMap } from "@/lib/hiring-profile-zips";
@@ -14,11 +14,7 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function HiringPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getServerUser();
   if (!user) {
     redirect("/login?next=/admin/hiring");
   }

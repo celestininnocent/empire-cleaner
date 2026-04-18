@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { SiteShell } from "@/components/site-shell";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import { getProfileRoleForUser } from "@/lib/supabase/profile-role";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { SmsTemplateManager } from "@/components/admin/sms-template-manager";
@@ -21,10 +21,7 @@ type TemplateRow = {
 };
 
 export default async function SmsTemplatesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/login?next=/admin/sms-templates");
 
   const role = await getProfileRoleForUser(user.id);

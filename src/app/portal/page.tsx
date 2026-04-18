@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { SiteShell } from "@/components/site-shell";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/get-server-user";
 import {
   computeNextCleaningIso,
   formatBillingFrequencyLabel,
@@ -34,15 +35,12 @@ export default async function PortalPage({
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getServerUser();
   if (!user) {
     redirect("/login?next=/portal");
   }
 
+  const supabase = await createClient();
   const { data: customer } = await supabase
     .from("customers")
     .select("id, address_line, city, state, zip, access_notes, pets_notes, parking_notes, onboarding_completed_at")
