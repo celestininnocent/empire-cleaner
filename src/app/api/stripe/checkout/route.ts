@@ -143,7 +143,7 @@ export async function POST(request: Request) {
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         customer_email: stripeCustomerEmail || undefined,
-        success_url: `${appUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${appUrl}/booking-confirmed?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appUrl}/book`,
         metadata: {
           ...commonMeta,
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: stripeCustomerEmail || undefined,
-      success_url: `${appUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/booking-confirmed?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/book`,
       metadata: {
         ...commonMeta,
