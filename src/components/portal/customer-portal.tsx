@@ -50,6 +50,28 @@ type CleanerPreview = {
   profiles: { full_name: string | null; avatar_url: string | null } | null;
 };
 
+type OnboardingProfile = {
+  addressLine: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  accessNotes: string | null;
+  petsNotes: string | null;
+  parkingNotes: string | null;
+  completedAt: string | null;
+};
+
+function formatOnboardingAddress(p: OnboardingProfile): string {
+  const line = [
+    p.addressLine?.trim(),
+    [p.city?.trim(), p.state?.trim()].filter(Boolean).join(", "),
+    p.zip?.trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return line || "Not on file yet.";
+}
+
 function NextCleaningHero({
   nextCleaningIso,
   hasActiveSubscription,
@@ -123,6 +145,8 @@ export function CustomerPortal({
   nextCleaningIso,
   subscriptionPlanLabel,
   tipPaidSuccess = false,
+  onboardingSavedSuccess = false,
+  onboardingProfile = null,
 }: {
   initialJobs: JobRow[];
   cleanersByTeam: Record<string, CleanerPreview[]>;
@@ -134,6 +158,8 @@ export function CustomerPortal({
   nextCleaningIso: string | null;
   subscriptionPlanLabel: string | null;
   tipPaidSuccess?: boolean;
+  onboardingSavedSuccess?: boolean;
+  onboardingProfile?: OnboardingProfile | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -251,6 +277,11 @@ export function CustomerPortal({
           Tip payment successful. Thank you for supporting your crew.
         </p>
       ) : null}
+      {onboardingSavedSuccess ? (
+        <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-900 dark:text-emerald-200">
+          Arrival details saved. Your crew now has your access, parking, and pet notes.
+        </p>
+      ) : null}
       {actionError ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm text-destructive" role="alert">
           {actionError}
@@ -260,6 +291,50 @@ export function CustomerPortal({
         <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-900 dark:text-emerald-200">
           {actionSuccess}
         </p>
+      ) : null}
+      {onboardingProfile ? (
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Home access profile</CardTitle>
+            <CardDescription>
+              Dispatch and your assigned crew use these details to arrive prepared.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 pt-0 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Service address</p>
+              <p className="mt-1 text-sm text-foreground">
+                {formatOnboardingAddress(onboardingProfile)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Last updated</p>
+              <p className="mt-1 text-sm text-foreground">
+                {onboardingProfile.completedAt
+                  ? new Date(onboardingProfile.completedAt).toLocaleString()
+                  : "Not completed yet"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Access instructions</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                {onboardingProfile.accessNotes?.trim() || "No access notes yet."}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Pets</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                {onboardingProfile.petsNotes?.trim() || "No pet notes yet."}
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">Parking</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                {onboardingProfile.parkingNotes?.trim() || "No parking notes yet."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
       {initialJobs.map((job) => {
         const proofPhotos = photoProofByJob[job.id] ?? [];

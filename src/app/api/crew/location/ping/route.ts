@@ -4,10 +4,21 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { haversineMiles } from "@/lib/geo";
 import { normalizeUsPhoneToE164 } from "@/lib/sms";
 import { queueOutboundSms, processSmsQueueBatch } from "@/lib/sms-queue";
+import { assertBrowserSameOriginPost } from "@/lib/security/same-origin";
+
+function nearbyAlertMiles(): number {
+  const raw = process.env.CREW_NEARBY_ALERT_MILES ?? "2.5";
+  const n = Number.parseFloat(raw);
+  return Number.isFinite(n) && n > 0 && n <= 50 ? n : 2.5;
+}
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { lat?: number; lng?: number };
+    const originBlock = assertBrowserSameOriginPost(request);
+    if (originBlock) return originBlock;
+
+    const body = (await request.json()) as { lat?: number; lng?: number; background?: boolean };
+    const background = body.background === true;
     const lat = Number(body.lat);
     const lng = Number(body.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -69,6 +80,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, queued: 0, reason: "no_team" });
     }
 
+    if (background) {
+      return NextResponse.json({ ok: true, queued: 0, background: true });
+    }
+
+    const radius = nearbyAlertMiles();
     const soonIso = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
     const { data: jobs } = await svc
       .from("jobs")
@@ -87,7 +103,7 @@ export async function POST(request: Request) {
       if (j.customer_eta_notified_at) continue;
       if (j.lat == null || j.lng == null) continue;
       const d = haversineMiles(lat, lng, Number(j.lat), Number(j.lng));
-      if (d > 2.5) continue;
+      if (d > radius) continue;
 
       const { data: customer } = await svc
         .from("customers")

@@ -16,10 +16,11 @@ export const dynamic = "force-dynamic";
 export default async function PortalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tip_paid?: string }>;
+  searchParams: Promise<{ tip_paid?: string; onboarding?: string }>;
 }) {
   const sp = await searchParams;
   const tipPaidSuccess = sp.tip_paid === "1";
+  const onboardingSavedSuccess = sp.onboarding === "1";
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return (
@@ -44,7 +45,7 @@ export default async function PortalPage({
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("id")
+    .select("id, address_line, city, state, zip, access_notes, pets_notes, parking_notes, onboarding_completed_at")
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -188,6 +189,21 @@ export default async function PortalPage({
           nextCleaningIso={nextCleaningIso}
           subscriptionPlanLabel={subscriptionPlanLabel}
           tipPaidSuccess={tipPaidSuccess}
+          onboardingSavedSuccess={onboardingSavedSuccess}
+          onboardingProfile={
+            customer
+              ? {
+                  addressLine: customer.address_line,
+                  city: customer.city,
+                  state: customer.state,
+                  zip: customer.zip,
+                  accessNotes: customer.access_notes,
+                  petsNotes: customer.pets_notes,
+                  parkingNotes: customer.parking_notes,
+                  completedAt: customer.onboarding_completed_at,
+                }
+              : null
+          }
         />
       </div>
     </SiteShell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -49,11 +49,20 @@ import { siteConfig } from "@/config/site";
 import type { RouteOptimizationResult } from "@/lib/route-optimization";
 import { friendlyFetchFailureMessage, sameOriginJsonPost } from "@/lib/network-error";
 import { defaultServiceMapCenter, haversineMiles } from "@/lib/geo";
+import { compressImageForUpload } from "@/lib/image-compress";
 
-const GEOLOCATION_OPTIONS: PositionOptions = {
+/** Manual “Share GPS” — accurate enough for dispatch + customer ETA geofence. */
+const PING_GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  maximumAge: 20_000,
+  timeout: 35_000,
+};
+
+/** Background pings while clocked in — slightly softer to save battery. */
+const BACKGROUND_GEO_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
-  maximumAge: 60_000,
-  timeout: 25_000,
+  maximumAge: 120_000,
+  timeout: 45_000,
 };
 
 /** Used when loading the field map pin (slightly more accurate than dispatch ping). */
@@ -63,7 +72,7 @@ const MAP_GEOLOCATION_OPTIONS: PositionOptions = {
   timeout: 20_000,
 };
 
-function getCurrentPositionAsync(options: PositionOptions = GEOLOCATION_OPTIONS): Promise<GeolocationPosition> {
+function getCurrentPositionAsync(options: PositionOptions = PING_GEOLOCATION_OPTIONS): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported in this browser."));
@@ -103,6 +112,7 @@ function FieldMapCamera({
       map.panTo(fallbackCenter);
       map.setZoom(fallbackZoom);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scalar lat/lng deps track marker moves without object identity churn
   }, [map, a?.lat, a?.lng, b?.lat, b?.lng, fallbackCenter.lat, fallbackCenter.lng, fallbackZoom]);
   return null;
 }
@@ -245,6 +255,8 @@ export function FieldShift({
   const [payoutNotice, setPayoutNotice] = useState<string | null>(null);
   const [gpsShareError, setGpsShareError] = useState<string | null>(null);
   const [gpsShareSuccess, setGpsShareSuccess] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const backgroundGpsRef = useRef<number | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimNotice, setClaimNotice] = useState<string | null>(null);
   const [clock, setClock] = useState<{
@@ -320,74 +332,115 @@ export function FieldShift({
           (items.filter((i) => i.completed_at).length / items.length) * 100
         );
 
-  async function shareLocation() {
-    if (!cleanerId) return;
-    if (!navigator.geolocation) {
-      setGpsShareError("This browser does not support sharing location.");
-      return;
-    }
-    setGpsShareError(null);
-    setGpsShareSuccess(null);
-    setBusy("gps");
-    try {
-      const pos = await getCurrentPositionAsync();
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      setDeviceLocation({ lat, lng });
-
-      const controller = new AbortController();
-      const fetchTimeout = window.setTimeout(() => controller.abort(), 35_000);
-      let res: Response;
-      try {
-        res = await fetch("/api/crew/location/ping", {
-          ...sameOriginJsonPost,
-          body: JSON.stringify({ lat, lng }),
-          signal: controller.signal,
-        });
-      } finally {
-        window.clearTimeout(fetchTimeout);
-      }
-
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        ok?: boolean;
-        reason?: string;
-        queued?: number;
-      };
-
-      if (!res.ok) {
-        setGpsShareError(data.error ?? `Server returned ${res.status}.`);
+  const shareLocation = useCallback(
+    async (opts?: { background?: boolean; silent?: boolean }) => {
+      if (!cleanerId) return;
+      if (!navigator.geolocation) {
+        if (!opts?.silent) {
+          setGpsShareError("This browser does not support sharing location.");
+        }
         return;
       }
+      const background = opts?.background === true;
+      const silent = opts?.silent === true;
+      if (!silent) {
+        setGpsShareError(null);
+        setGpsShareSuccess(null);
+      }
+      if (!background) {
+        setBusy("gps");
+      }
+      try {
+        const pos = await getCurrentPositionAsync(
+          background ? BACKGROUND_GEO_OPTIONS : PING_GEOLOCATION_OPTIONS
+        );
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setDeviceLocation({ lat, lng });
 
-      if (data.reason === "no_team") {
-        setGpsShareSuccess(
-          "Location saved. You are not assigned to a crew team yet, so some dispatch features may be limited."
-        );
-      } else {
-        setGpsShareSuccess(
-          data.queued && data.queued > 0
-            ? `Location shared. We notified a customer you may be nearby (${data.queued} update).`
-            : "Location shared with dispatch."
-        );
+        const controller = new AbortController();
+        const fetchTimeout = window.setTimeout(() => controller.abort(), 40_000);
+        let res: Response;
+        try {
+          res = await fetch("/api/crew/location/ping", {
+            ...sameOriginJsonPost,
+            body: JSON.stringify({ lat, lng, background }),
+            signal: controller.signal,
+          });
+        } finally {
+          window.clearTimeout(fetchTimeout);
+        }
+
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          ok?: boolean;
+          reason?: string;
+          queued?: number;
+        };
+
+        if (!res.ok) {
+          if (!silent) {
+            setGpsShareError(data.error ?? `Server returned ${res.status}.`);
+          }
+          return;
+        }
+
+        if (silent) return;
+
+        if (data.reason === "no_team") {
+          setGpsShareSuccess(
+            "Location saved. You are not assigned to a crew team yet, so some dispatch features may be limited."
+          );
+        } else {
+          setGpsShareSuccess(
+            data.queued && data.queued > 0
+              ? `Location shared. We notified a customer you may be nearby (${data.queued} update).`
+              : "Location shared with dispatch."
+          );
+        }
+      } catch (e) {
+        if (silent) return;
+        if (e instanceof Error && e.name === "AbortError") {
+          setGpsShareError("Saving location took too long. Check your connection and try again.");
+        } else if (
+          e &&
+          typeof e === "object" &&
+          "code" in e &&
+          (e as GeolocationPositionError).code !== undefined
+        ) {
+          setGpsShareError(geolocationErrorMessage(e));
+        } else {
+          setGpsShareError(friendlyFetchFailureMessage(e));
+        }
+      } finally {
+        if (!background) {
+          setBusy(null);
+        }
       }
-    } catch (e) {
-      if (e instanceof Error && e.name === "AbortError") {
-        setGpsShareError("Saving location took too long. Check your connection and try again.");
-      } else if (
-        e &&
-        typeof e === "object" &&
-        "code" in e &&
-        (e as GeolocationPositionError).code !== undefined
-      ) {
-        setGpsShareError(geolocationErrorMessage(e));
-      } else {
-        setGpsShareError(friendlyFetchFailureMessage(e));
+    },
+    [cleanerId]
+  );
+
+  useEffect(() => {
+    if (!clock.entryId || !cleanerId) {
+      if (backgroundGpsRef.current != null) {
+        window.clearInterval(backgroundGpsRef.current);
+        backgroundGpsRef.current = null;
       }
-    } finally {
-      setBusy(null);
+      return;
     }
-  }
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
+      void shareLocation({ background: true, silent: true });
+    };
+    backgroundGpsRef.current = window.setInterval(tick, 5 * 60 * 1000);
+    return () => {
+      if (backgroundGpsRef.current != null) {
+        window.clearInterval(backgroundGpsRef.current);
+        backgroundGpsRef.current = null;
+      }
+    };
+  }, [clock.entryId, cleanerId, shareLocation]);
 
   async function clockIn() {
     if (!cleanerId || !activeJobId) return;
@@ -409,6 +462,7 @@ export function FieldShift({
         entryId: data.id,
         startedAt: new Date().toISOString(),
       });
+      void shareLocation({ background: true, silent: true });
     }
   }
 
@@ -434,33 +488,55 @@ export function FieldShift({
         on_time_bonus_cents: payout.on_time_bonus_cents,
       })
       .eq("id", clock.entryId);
-    if (!error) {
-      try {
+    if (error) {
+      setPayoutNotice(`Could not save clock-out: ${error.message}`);
+      setBusy(null);
+      return;
+    }
+
+    const entryId = clock.entryId;
+    try {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
         const res = await fetch("/api/crew/payouts/process", {
           ...sameOriginJsonPost,
-          body: JSON.stringify({ timeEntryId: clock.entryId }),
+          body: JSON.stringify({ timeEntryId: entryId }),
         });
         const data = (await res.json()) as {
           status?: string;
           error?: string;
           ok?: boolean;
         };
-        if (!res.ok && data.error) {
-          setPayoutNotice(data.error);
-        } else if (data.status === "paid") {
+        if (data.status === "paid") {
           setPayoutNotice("Payout sent to your connected account.");
-        } else if (data.status === "awaiting_destination") {
+          break;
+        }
+        if (data.status === "awaiting_destination") {
           setPayoutNotice(
             "Payout is waiting for your Stripe Connect account to be linked."
           );
-        } else if (data.status === "failed") {
-          setPayoutNotice("Payout failed. Dispatch will retry after review.");
-        } else {
-          setPayoutNotice("Payout queued and processing.");
+          break;
         }
-      } catch (e) {
-        setPayoutNotice(friendlyFetchFailureMessage(e));
+        if (data.status === "failed") {
+          setPayoutNotice(
+            data.error?.trim()
+              ? `Payout failed: ${data.error}`
+              : "Payout failed. Dispatch can retry from the owner dashboard."
+          );
+          break;
+        }
+        if (res.ok) {
+          setPayoutNotice("Payout queued and processing.");
+          break;
+        }
+        if (res.status === 404 && attempt < 3) {
+          await new Promise((r) => setTimeout(r, 450 * (attempt + 1)));
+          continue;
+        }
+        setPayoutNotice(data.error ?? `Payout step returned ${res.status}.`);
+        break;
       }
+    } catch (e) {
+      setPayoutNotice(friendlyFetchFailureMessage(e));
     }
     setBusy(null);
     setClock({ jobId: null, entryId: null, startedAt: null });
@@ -499,21 +575,31 @@ export function FieldShift({
   }
 
   async function onPhoto(row: CheckRow, file: File | null) {
-    if (!file) return;
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result));
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
+    if (!file || !cleanerId) return;
+    setPhotoError(null);
     setBusy(row.id);
-    const supabase = createClient();
-    await supabase
-      .from("job_checklist_items")
-      .update({ photo_url: dataUrl, completed_at: new Date().toISOString() })
-      .eq("id", row.id);
-    setBusy(null);
-    router.refresh();
+    try {
+      const prepared = await compressImageForUpload(file);
+      const fd = new FormData();
+      fd.append("checklistItemId", row.id);
+      fd.append("file", prepared);
+
+      const res = await fetch("/api/crew/checklist-photo", {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
+      if (!res.ok || !data.ok) {
+        setPhotoError(data.error ?? "Could not upload photo.");
+        return;
+      }
+    } catch (e) {
+      setPhotoError(friendlyFetchFailureMessage(e));
+    } finally {
+      setBusy(null);
+      router.refresh();
+    }
   }
 
   async function completeJob() {
@@ -724,7 +810,7 @@ export function FieldShift({
                   variant="secondary"
                   size="sm"
                   disabled={!cleanerId || busy === "gps"}
-                  onClick={shareLocation}
+                  onClick={() => void shareLocation()}
                 >
                   {busy === "gps" ? (
                     <>
@@ -858,6 +944,11 @@ export function FieldShift({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {photoError ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {photoError}
+                </p>
+              ) : null}
               <Progress value={progress} />
               {items.map((row) => (
                 <div
@@ -986,7 +1077,7 @@ export function FieldShift({
                     variant="secondary"
                     size="sm"
                     disabled={!cleanerId || busy === "gps"}
-                    onClick={shareLocation}
+                    onClick={() => void shareLocation()}
                   >
                     {busy === "gps" ? (
                       <Loader2 className="size-4 animate-spin" />

@@ -123,39 +123,51 @@ export async function POST(request: Request) {
       .update({ status: "processing", failure_reason: null })
       .eq("id", payout.id);
 
-    const transfer = await stripe.transfers.create(
-      {
-        amount: payout.amount_cents,
-        currency: payout.currency || "usd",
-        destination,
-        metadata: {
-          crew_payout_id: payout.id,
-          time_entry_id: timeEntryId,
-          cleaner_id: payout.cleaner_id,
-          base_cents: String(payout.base_cents ?? payout.amount_cents),
-          quality_bonus_cents: String(payout.quality_bonus_cents ?? 0),
-          on_time_bonus_cents: String(payout.on_time_bonus_cents ?? 0),
+    try {
+      const transfer = await stripe.transfers.create(
+        {
+          amount: payout.amount_cents,
+          currency: payout.currency || "usd",
+          destination,
+          metadata: {
+            crew_payout_id: payout.id,
+            time_entry_id: timeEntryId,
+            cleaner_id: payout.cleaner_id,
+            base_cents: String(payout.base_cents ?? payout.amount_cents),
+            quality_bonus_cents: String(payout.quality_bonus_cents ?? 0),
+            on_time_bonus_cents: String(payout.on_time_bonus_cents ?? 0),
+          },
         },
-      },
-      { idempotencyKey: `crew_payout_${payout.id}` }
-    );
+        { idempotencyKey: `crew_payout_${payout.id}` }
+      );
 
-    await svc
-      .from("crew_payouts")
-      .update({
+      await svc
+        .from("crew_payouts")
+        .update({
+          status: "paid",
+          stripe_transfer_id: transfer.id,
+          paid_at: new Date().toISOString(),
+          failure_reason: null,
+        })
+        .eq("id", payout.id);
+
+      return NextResponse.json({
+        ok: true,
         status: "paid",
-        stripe_transfer_id: transfer.id,
-        paid_at: new Date().toISOString(),
-        failure_reason: null,
-      })
-      .eq("id", payout.id);
-
-    return NextResponse.json({
-      ok: true,
-      status: "paid",
-      payoutId: payout.id,
-      transferId: transfer.id,
-    });
+        payoutId: payout.id,
+        transferId: transfer.id,
+      });
+    } catch (stripeErr) {
+      const msg = stripeErr instanceof Error ? stripeErr.message : "Stripe transfer failed";
+      await svc
+        .from("crew_payouts")
+        .update({
+          status: "failed",
+          failure_reason: msg.slice(0, 500),
+        })
+        .eq("id", payout.id);
+      return NextResponse.json({ ok: false, status: "failed", error: msg }, { status: 400 });
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Payout failed";
     return NextResponse.json({ error: msg }, { status: 400 });
