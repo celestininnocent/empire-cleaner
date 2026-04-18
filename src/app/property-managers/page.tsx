@@ -32,7 +32,7 @@ const points = [
   },
 ];
 
-const portfolioMailto = `mailto:${encodeURIComponent(siteConfig.partnershipsEmail)}?subject=${encodeURIComponent("Portfolio quote — Empire Cleaner")}&body=${encodeURIComponent(
+const portfolioMailto = `mailto:${siteConfig.partnershipsEmail}?subject=${encodeURIComponent("Portfolio quote — Empire Cleaner")}&body=${encodeURIComponent(
   "Name:\nCompany:\n# of units / markets:\nDesired cadence:\nNotes:\n"
 )}`;
 
