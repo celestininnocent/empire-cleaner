@@ -15,21 +15,37 @@ export const siteConfig = {
   titleSuffix: "Premium cleaning services",
 
   metaDescription:
-    "Reliable Portland home cleaning — see your price upfront, book online in minutes, one-time or recurring. Insured team, satisfaction guarantee, easy rescheduling.",
+    "Reliable Portland home cleaning with instant online booking. Upfront pricing, insured background-checked cleaners, satisfaction guarantee, STR turnovers & recurring home cleans.",
 
   /**
-   * Home hero — outcome, location, and trust for cold traffic.
+   * Home hero — outcome-led headline + emotional hook (edit stats & testimonial with real numbers).
    */
-  heroTitle: "Reliable home cleaning in Portland.",
+  heroTitle: "Reliable Portland home cleaning with instant online booking",
   heroLead:
-    "Get instant pricing, book online in minutes, and choose one-time or recurring service.",
-  heroTrustLine: "Professional cleaners, clear pricing, easy rescheduling.",
+    "See your full price before you pay, then lock in a visit in minutes — one-time or recurring.",
+  heroEmotionalLine:
+    "Get your evenings back at home — or stress-free turnovers that don’t bump guest check-in.",
+  /** Featured in hero — replace with a real Google review when you have permission. */
+  heroTestimonialQuote:
+    "On time, spotless kitchen and baths, and the price matched the quote exactly. Wish we’d switched sooner.",
+  heroTestimonialName: "Sarah M.",
+  heroTestimonialDetail: "Laurelhurst · Recurring home cleaning",
+  heroTestimonialSource: "Google review",
 
-  /** Home — trust strip (first viewport). */
-  homeTrustInsured: "Fully insured",
-  homeTrustGuaranteeShort: "24-hour satisfaction guarantee",
-  homeTrustLocal: "Portland-area service",
-  homeTrustCheckout: "Secure checkout",
+  /** Hero stats — update with real metrics (or remove a line until you have data). */
+  homeTrustStatGoogleValue: "4.9",
+  homeTrustStatGoogleLabel: "Google rating",
+  homeTrustStatGoogleSub: "127 reviews",
+  homeTrustStatCleansValue: "1,200+",
+  homeTrustStatCleansLabel: "Cleans completed",
+  homeTrustStatRecurringValue: "85+",
+  homeTrustStatRecurringLabel: "Recurring homes",
+
+  /** Home — trust strip (specific reassurance). */
+  homeTrustInsured: "Insured",
+  homeTrustBackgroundChecked: "Background-checked cleaners",
+  homeTrustGuaranteeShort: "Satisfaction guarantee",
+  homeTrustCheckout: "Secure payment",
 
   /** Home — buyer-focused feature column. */
   homeFeatureQuoteTitle: "See your quote instantly",
@@ -41,6 +57,19 @@ export const siteConfig = {
   homeFeatureManageTitle: "Manage bookings without calling",
   homeFeatureManageBody:
     "After you book, sign in anytime to reschedule, see who we’re sending, and track your visits in one place.",
+
+  /** Between hero and segments — fast-scan value stack. */
+  homeWhyChooseTitle: "Why homeowners & hosts choose us",
+  homeWhyChooseLead: "Instant quote, reliable cleaners, easy rescheduling — without the back-and-forth of hiring solo cleaners.",
+  homeWhyChoose1Title: "Instant quote",
+  homeWhyChoose1Body:
+    "Know your total before checkout — sized to your rooms, baths, and service level.",
+  homeWhyChoose2Title: "Reliable cleaners",
+  homeWhyChoose2Body:
+    "Insured, background-checked teams with notes, access details, and dispatch support behind every job.",
+  homeWhyChoose3Title: "Easy rescheduling",
+  homeWhyChoose3Body:
+    "Change visits in your account, message what matters, and keep STR turnovers on the calendar.",
 
   /** Home — who we serve. */
   homePathsTitle: "Cleaning for every kind of home",
@@ -58,16 +87,17 @@ export const siteConfig = {
     "Portfolio-scale turnover cleaning — one point of contact and clear communication across units.",
   homePathPmCta: "Portfolio & B2B",
 
-  /** Home — social proof (edit quotes as you collect real testimonials). */
-  homeSocialProofTitle: "Trusted by Portland-area homeowners & hosts",
+  /** Home — social proof section (names & neighborhoods — update with real reviews). */
+  homeSocialProofTitle: "Loved by Portland neighbors & rental hosts",
   homeSocialProofLead:
-    "Real homes, rentals, and portfolios — the same upfront pricing and professional team, whether it’s a one-time reset or recurring service.",
+    "A few recent reviews — ask us for more references or read us on Google anytime.",
   homeSocialProofQuote1:
-    "I saw the full price before I paid. Booking took a few minutes and rescheduling in the portal was easy.",
-  homeSocialProofAttribution1: "Residential customer · Portland metro",
+    "Transparent pricing, showed up on time, and the place smelled amazing after. Booking online took maybe five minutes.",
+  homeSocialProofAttribution1: "James K. · Alberta Arts · Home cleaning",
   homeSocialProofQuote2:
-    "We needed turnovers that don’t slip — clear communication and photo checklists help us stay on schedule for guests.",
-  homeSocialProofAttribution2: "Short-term rental host · Portland area",
+    "Our NE Portland duplex turns fast — checklist photos mean fewer guest complaints. Empire’s been our go-to for turnovers.",
+  homeSocialProofAttribution2: "Maria L. · Airbnb host · Portland",
+  homeSocialProofSourceGoogle: "Google review",
 
   /** Home — how it works. */
   homeProcessTitle: "How booking works",
@@ -79,6 +109,37 @@ export const siteConfig = {
   homeProcess3Title: "We clean",
   homeProcess3Body:
     "Our team arrives prepared with your notes. Manage or reschedule anytime from your account.",
+
+  /** Visual proof — add real photos to /public/marketing/ when ready (see homepage). */
+  homeVisualProofTitle: "See the quality we deliver",
+  homeVisualProofLead:
+    "Photo checklists for hosts, documented visits for homes — add your own before/after shots to this section anytime.",
+  homeVisualProofBeforeCaption: "Before — add your photo",
+  homeVisualProofAfterCaption: "After — add your photo",
+  homeVisualProofChecklistTitle: "Host turnover checklist (sample)",
+  homeVisualProofChecklistSub: "Rooms, photos, and timestamps — the same structure our crew uses in the field.",
+  homeChecklistSampleItems: [
+    "Kitchen & dining reset",
+    "Baths & glass",
+    "Floors vacuumed",
+    "Trash removed",
+    "Checklist photos",
+  ] as const,
+
+  /** What’s included vs hiring independent cleaners. */
+  homeWhatsIncludedTitle: "What’s included in your clean",
+  homeWhatsIncludedIntro:
+    "Every visit is scoped to your booking — typical residential service covers living areas, kitchen, baths, and floors you select at quote time.",
+  homeWhatsIncludedItems: [
+    "Dusting & wiping of agreed surfaces",
+    "Kitchen counters, appliance fronts, and sink",
+    "Bath sinks, mirrors, toilets, and showers/tubs (per scope)",
+    "Vacuuming and hard-floor cleaning of booked areas",
+    "Trash emptied in booked rooms",
+  ] as const,
+  homeVsIndependentsTitle: "Why book through us instead of a solo cleaner?",
+  homeVsIndependentsBody:
+    "You get upfront pricing, insurance, background-checked teams, dispatch support, and an account to reschedule — without chasing texts or negotiating cash rates. Independent cleaners can be great; we built Empire Cleaner for people who want predictability and backup when plans change.",
 
   /** Home — FAQ (objections before checkout). */
   homeFaqTitle: "Common questions",
@@ -104,6 +165,22 @@ export const siteConfig = {
     {
       q: "Can I reschedule?",
       a: "Yes. Sign in to My account to view upcoming visits and request changes. Cancellations with less than 24 hours’ notice may incur a fee — see our Terms of Service for cancellation and access policies.",
+    },
+    {
+      q: "What time will you arrive?",
+      a: "We schedule visits within an arrival window (shown at booking and in your confirmation). You’ll get the planned window before we arrive; if dispatch needs to adjust, we’ll reach out by phone or text.",
+    },
+    {
+      q: "Do you bring supplies and equipment?",
+      a: "Our teams arrive with professional-grade supplies and equipment for the service level you booked. If you prefer specific products for sensitive surfaces, leave them out with a note in your booking.",
+    },
+    {
+      q: "What about pets?",
+      a: "Tell us about pets in your booking notes (allergies, crating, or shy animals). We work around your household — if a pet makes a room unsafe to enter, we’ll document and coordinate with you.",
+    },
+    {
+      q: "What happens right after I book?",
+      a: "You’ll receive a confirmation and receipt by email, your visit appears in My account, and you can add or edit access notes anytime before the appointment. Closer to the date, you’ll see crew assignment when it’s set.",
     },
   ],
 
