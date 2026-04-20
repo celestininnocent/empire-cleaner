@@ -4,10 +4,10 @@ import {
   BadgeCheck,
   CalendarClock,
   CheckCircle2,
-  ChevronDown,
   ClipboardList,
   Home,
   MapPin,
+  Quote,
   ShieldCheck,
   Sparkles,
   Users,
@@ -202,6 +202,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-b border-border/60 bg-gradient-to-b from-primary/[0.06] to-background py-14 sm:py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {siteConfig.homeSocialProofTitle}
+            </h2>
+            <p className="mt-3 text-pretty text-muted-foreground">{siteConfig.homeSocialProofLead}</p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <figure className="relative rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+              <Quote
+                className="absolute right-4 top-4 size-8 text-primary/15"
+                aria-hidden
+              />
+              <blockquote className="text-pretty text-sm leading-relaxed text-foreground">
+                “{siteConfig.homeSocialProofQuote1}”
+              </blockquote>
+              <figcaption className="mt-4 text-xs font-medium text-muted-foreground">
+                {siteConfig.homeSocialProofAttribution1}
+              </figcaption>
+            </figure>
+            <figure className="relative rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+              <Quote
+                className="absolute right-4 top-4 size-8 text-primary/15"
+                aria-hidden
+              />
+              <blockquote className="text-pretty text-sm leading-relaxed text-foreground">
+                “{siteConfig.homeSocialProofQuote2}”
+              </blockquote>
+              <figcaption className="mt-4 text-xs font-medium text-muted-foreground">
+                {siteConfig.homeSocialProofAttribution2}
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
       <section className="py-14 sm:py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
@@ -251,25 +288,20 @@ export default function HomePage() {
           <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {siteConfig.homeFaqTitle}
           </h2>
-          <div className="mt-8 space-y-3">
+          <p className="mx-auto mt-2 max-w-xl text-center text-sm text-muted-foreground">
+            {siteConfig.homeFaqSubtitle}
+          </p>
+          <div className="mt-8 space-y-5">
             {faqItems.map((item) => (
-              <details
+              <div
                 key={item.q}
-                className="group rounded-xl border border-border/80 bg-card px-4 py-3 shadow-sm open:ring-1 open:ring-primary/15"
+                className="rounded-xl border border-border/80 bg-card p-5 shadow-sm"
               >
-                <summary className="cursor-pointer list-none font-medium text-foreground [&::-webkit-details-marker]:hidden">
-                  <span className="flex items-center justify-between gap-3">
-                    {item.q}
-                    <ChevronDown
-                      className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:-rotate-180"
-                      aria-hidden
-                    />
-                  </span>
-                </summary>
-                <p className="mt-3 border-t border-border/60 pt-3 text-sm leading-relaxed text-muted-foreground">
+                <h3 className="text-base font-semibold leading-snug text-foreground">{item.q}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   <FaqAnswer text={item.a} />
                 </p>
-              </details>
+              </div>
             ))}
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">

@@ -58,6 +58,17 @@ export const siteConfig = {
     "Portfolio-scale turnover cleaning — one point of contact and clear communication across units.",
   homePathPmCta: "Portfolio & B2B",
 
+  /** Home — social proof (edit quotes as you collect real testimonials). */
+  homeSocialProofTitle: "Trusted by Portland-area homeowners & hosts",
+  homeSocialProofLead:
+    "Real homes, rentals, and portfolios — the same upfront pricing and professional team, whether it’s a one-time reset or recurring service.",
+  homeSocialProofQuote1:
+    "I saw the full price before I paid. Booking took a few minutes and rescheduling in the portal was easy.",
+  homeSocialProofAttribution1: "Residential customer · Portland metro",
+  homeSocialProofQuote2:
+    "We needed turnovers that don’t slip — clear communication and photo checklists help us stay on schedule for guests.",
+  homeSocialProofAttribution2: "Short-term rental host · Portland area",
+
   /** Home — how it works. */
   homeProcessTitle: "How booking works",
   homeProcessLead: "Three simple steps from quote to a spot on the calendar.",
@@ -71,18 +82,20 @@ export const siteConfig = {
 
   /** Home — FAQ (objections before checkout). */
   homeFaqTitle: "Common questions",
+  homeFaqSubtitle:
+    "Straight answers on price, insurance, satisfaction, and scheduling — before you check out.",
   homeFaq: [
     {
       q: "How much does it cost?",
-      a: "Your quote is based on home size, bathrooms, square footage, and the service level you choose. You’ll see the full price before you pay — no hidden fees at checkout.",
+      a: "Your total depends on how many bedrooms and bathrooms you have, approximate square footage, and the service level you choose (for example standard vs. deeper reset). You’ll see the full dollar amount on the checkout screen before you pay — no hidden fees or surprise charges at the door.",
     },
     {
       q: "What if I’m not happy with the visit?",
-      a: "We offer a 24-hour satisfaction guarantee on documented areas. Let us know within a day and we’ll make it right. Full policy is in our Terms of Service.",
+      a: "We offer a 24-hour satisfaction guarantee on documented service areas. Reach out within 24 hours of your visit and we’ll make it right per our policy. Full details are in our Terms of Service.",
     },
     {
       q: "Are you insured?",
-      a: "Yes — we carry general liability coverage for peace of mind on every job.",
+      a: "Yes. We carry general liability insurance for peace of mind on every job. That protects you in the rare case of accidental damage during service, in line with our Terms of Service.",
     },
     {
       q: "Do I need to be home?",
@@ -90,11 +103,13 @@ export const siteConfig = {
     },
     {
       q: "Can I reschedule?",
-      a: "Yes. Sign in to your account to manage upcoming visits. Cancellations within 24 hours may incur a fee per our policies.",
+      a: "Yes. Sign in to My account to view upcoming visits and request changes. Cancellations with less than 24 hours’ notice may incur a fee — see our Terms of Service for cancellation and access policies.",
     },
   ],
 
   footer: "Professional cleaning · Straightforward booking · Here when you need us",
+  /** Footer — internal tools (not shown in main header). */
+  footerTeamToolsLead: "Team & tools",
 
   /** Display and `tel:` href — support line for crew access, booking, and general help. */
   supportPhoneDisplay: SUPPORT_PHONE_DISPLAY,
@@ -121,8 +136,6 @@ export const siteConfig = {
     propertyManagers: "Property managers",
     admin: "Owner",
     field: "Crew app",
-    /** Footer / compact label for team-only tools. */
-    teamNavLabel: "Team",
   },
 
   stripeProductLine: "Recurring home clean",

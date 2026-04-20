@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Phone, Sparkles } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { MobileNav } from "@/components/mobile-nav";
 import { SetupBanner } from "@/components/setup-banner";
@@ -8,16 +8,12 @@ import { getServerUser } from "@/lib/supabase/get-server-user";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** Customer-first navigation only — team tools live in the footer. */
 const primaryNav = [
   { href: "/book", label: siteConfig.nav.book },
-  { href: "/portal", label: siteConfig.nav.portal },
   { href: "/hosts", label: siteConfig.nav.hosts },
   { href: "/property-managers", label: siteConfig.nav.propertyManagers },
-];
-
-const teamNav = [
-  { href: "/admin", label: siteConfig.nav.admin },
-  { href: "/field", label: siteConfig.nav.field },
+  { href: "/portal", label: siteConfig.nav.portal },
 ];
 
 export async function SiteShell({
@@ -42,7 +38,7 @@ export async function SiteShell({
             <span className="hidden sm:inline">{siteConfig.businessName}</span>
           </Link>
           <nav
-            className="hidden max-w-3xl flex-1 flex-wrap items-center justify-center gap-x-0 gap-y-1 md:flex lg:max-w-none"
+            className="hidden flex-1 flex-wrap items-center justify-center gap-x-0 gap-y-1 md:flex"
             aria-label="Main"
           >
             {primaryNav.map((l) => (
@@ -54,25 +50,17 @@ export async function SiteShell({
                 {l.label}
               </Link>
             ))}
-            <span
-              className="mx-0.5 hidden h-4 w-px shrink-0 bg-border/90 lg:block"
-              aria-hidden
-            />
-            <div className="flex flex-wrap items-center justify-center gap-x-0 gap-y-1">
-              {teamNav.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "text-xs font-normal text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
           </nav>
+          <a
+            href={`tel:${siteConfig.supportPhoneTel}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "hidden shrink-0 items-center gap-1.5 font-semibold text-primary md:inline-flex"
+            )}
+          >
+            <Phone className="size-4" aria-hidden />
+            <span className="max-w-[9rem] truncate sm:max-w-none">{siteConfig.supportPhoneDisplay}</span>
+          </a>
           <div className="flex items-center gap-2">
             <MobileNav userEmail={userEmail} />
             {cta ?? <AuthHeaderActions userEmail={userEmail} />}
@@ -120,14 +108,27 @@ export async function SiteShell({
             Property managers
           </Link>
         </p>
-        <p className="mt-3">
-          <Link
-            href="/field/demo"
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
+        <p className="mt-6 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground/80">{siteConfig.footerTeamToolsLead}</span>
+          <span className="mx-1.5" aria-hidden>
+            ·
+          </span>
+          <Link href="/admin" className="font-medium text-primary underline-offset-4 hover:underline">
+            {siteConfig.nav.admin}
+          </Link>
+          <span className="mx-1.5 text-border" aria-hidden>
+            ·
+          </span>
+          <Link href="/field" className="font-medium text-primary underline-offset-4 hover:underline">
+            {siteConfig.nav.field}
+          </Link>
+          <span className="mx-1.5 text-border" aria-hidden>
+            ·
+          </span>
+          <Link href="/field/demo" className="font-medium text-primary underline-offset-4 hover:underline">
             Crew route demo
           </Link>
-          <span className="text-muted-foreground"> — try stops &amp; checklist without saving</span>
+          <span className="text-muted-foreground"> — sample route &amp; checklist</span>
         </p>
       </footer>
     </div>

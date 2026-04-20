@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, Phone } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,14 +11,9 @@ import { cn } from "@/lib/utils";
 
 const primaryNav = [
   { href: "/book", label: siteConfig.nav.book },
-  { href: "/portal", label: siteConfig.nav.portal },
   { href: "/hosts", label: siteConfig.nav.hosts },
   { href: "/property-managers", label: siteConfig.nav.propertyManagers },
-];
-
-const teamNav = [
-  { href: "/admin", label: siteConfig.nav.admin },
-  { href: "/field", label: siteConfig.nav.field },
+  { href: "/portal", label: siteConfig.nav.portal },
 ];
 
 export function MobileNav({ userEmail }: { userEmail?: string | null }) {
@@ -57,19 +52,14 @@ export function MobileNav({ userEmail }: { userEmail?: string | null }) {
               {l.label}
             </Link>
           ))}
-          <p className="mt-4 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {siteConfig.nav.teamNavLabel}
-          </p>
-          {teamNav.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              {l.label}
-            </Link>
-          ))}
+          <a
+            href={`tel:${siteConfig.supportPhoneTel}`}
+            onClick={() => setOpen(false)}
+            className="mt-2 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-3 text-sm font-semibold text-primary hover:bg-primary/10"
+          >
+            <Phone className="size-4 shrink-0" aria-hidden />
+            {siteConfig.supportPhoneDisplay}
+          </a>
           {signedIn ? (
             <SignOutButton
               className="mt-2 w-full justify-center"
