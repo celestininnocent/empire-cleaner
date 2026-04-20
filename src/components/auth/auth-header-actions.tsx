@@ -16,7 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export function AuthHeaderActions({ userEmail }: { userEmail: string | null }) {
+export function AuthHeaderActions({
+  userEmail,
+  presentation = "default",
+}: {
+  userEmail: string | null;
+  /** On marketing pages, hide email & heavy “signed in” UI — keep the header brand-first. */
+  presentation?: "default" | "marketing";
+}) {
   if (!userEmail) {
     return (
       <>
@@ -33,6 +40,25 @@ export function AuthHeaderActions({ userEmail }: { userEmail: string | null }) {
           href="/book"
           className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}
         >
+          Book a clean
+        </Link>
+      </>
+    );
+  }
+
+  if (presentation === "marketing") {
+    return (
+      <>
+        <Link
+          href="/portal"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "hidden sm:inline-flex font-medium"
+          )}
+        >
+          My account
+        </Link>
+        <Link href="/book" className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}>
           Book a clean
         </Link>
       </>

@@ -16,9 +16,16 @@ const primaryNav = [
   { href: "/portal", label: siteConfig.nav.portal },
 ];
 
-export function MobileNav({ userEmail }: { userEmail?: string | null }) {
+export function MobileNav({
+  userEmail,
+  presentation = "default",
+}: {
+  userEmail?: string | null;
+  presentation?: "default" | "marketing";
+}) {
   const [open, setOpen] = useState(false);
   const signedIn = Boolean(userEmail);
+  const marketing = presentation === "marketing";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -35,11 +42,14 @@ export function MobileNav({ userEmail }: { userEmail?: string | null }) {
         <SheetHeader>
           <SheetTitle className="text-left">{siteConfig.businessName}</SheetTitle>
         </SheetHeader>
-        {signedIn ? (
+        {signedIn && !marketing ? (
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-primary">Signed in</p>
             <p className="truncate text-sm font-medium text-foreground">{userEmail}</p>
           </div>
+        ) : null}
+        {signedIn && marketing ? (
+          <p className="mt-4 px-3 text-xs text-muted-foreground">You’re signed in — manage visits in My account.</p>
         ) : null}
         <nav className="mt-6 flex flex-col gap-1">
           {primaryNav.map((l) => (

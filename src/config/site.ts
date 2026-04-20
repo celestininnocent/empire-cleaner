@@ -25,6 +25,12 @@ export const siteConfig = {
     "See your full price before you pay, then lock in a visit in minutes — one-time or recurring.",
   heroEmotionalLine:
     "Get your evenings back at home — or stress-free turnovers that don’t bump guest check-in.",
+  /** Short local line under the hero badge — concrete metro proof. */
+  heroLocalLine: "Serving Portland, Beaverton, Hillsboro, Lake Oswego & nearby",
+  /** Hero phone line — link wraps the number in the page. */
+  heroCallLineBeforePhone: "Need help before booking? Call us at",
+  heroCallLineAfterPhone:
+    "— we’re happy to walk through pricing, timing, and what to expect.",
   /** Featured in hero — replace with a real Google review when you have permission. */
   heroTestimonialQuote:
     "On time, spotless kitchen and baths, and the price matched the quote exactly. Wish we’d switched sooner.",
@@ -98,6 +104,11 @@ export const siteConfig = {
     "Our NE Portland duplex turns fast — checklist photos mean fewer guest complaints. Empire’s been our go-to for turnovers.",
   homeSocialProofAttribution2: "Maria L. · Airbnb host · Portland",
   homeSocialProofSourceGoogle: "Google review",
+  homeSocialProofServiceTag1: "Recurring home cleaning",
+  homeSocialProofServiceTag2: "Airbnb turnover",
+
+  /** Sticky mobile CTA label */
+  homeStickyCtaLabel: "Get instant quote",
 
   /** Home — how it works. */
   homeProcessTitle: "How booking works",
@@ -110,12 +121,13 @@ export const siteConfig = {
   homeProcess3Body:
     "Our team arrives prepared with your notes. Manage or reschedule anytime from your account.",
 
-  /** Visual proof — add real photos to /public/marketing/ when ready (see homepage). */
-  homeVisualProofTitle: "See the quality we deliver",
-  homeVisualProofLead:
-    "Photo checklists for hosts, documented visits for homes — add your own before/after shots to this section anytime.",
-  homeVisualProofBeforeCaption: "Before — add your photo",
-  homeVisualProofAfterCaption: "After — add your photo",
+  /** Service area + checklist (no image placeholders — add photography later if desired). */
+  homeServiceAreaTitle: "Local service, real accountability",
+  homeServiceAreaLead:
+    "Same online booking flow whether you’re in the core city or a nearby suburb — dispatch-backed crews and documented visits.",
+  homeServiceAreaCardTitle: "Portland metro & nearby",
+  homeServiceAreaCities:
+    "Portland · Beaverton · Hillsboro · Lake Oswego · Gresham · Tigard · Vancouver, WA · and nearby ZIPs",
   homeVisualProofChecklistTitle: "Host turnover checklist (sample)",
   homeVisualProofChecklistSub: "Rooms, photos, and timestamps — the same structure our crew uses in the field.",
   homeChecklistSampleItems: [
@@ -137,9 +149,9 @@ export const siteConfig = {
     "Vacuuming and hard-floor cleaning of booked areas",
     "Trash emptied in booked rooms",
   ] as const,
-  homeVsIndependentsTitle: "Why book through us instead of a solo cleaner?",
+  homeVsIndependentsTitle: "Why homeowners choose Empire over independent cleaners",
   homeVsIndependentsBody:
-    "You get upfront pricing, insurance, background-checked teams, dispatch support, and an account to reschedule — without chasing texts or negotiating cash rates. Independent cleaners can be great; we built Empire Cleaner for people who want predictability and backup when plans change.",
+    "You get upfront pricing, insurance, background-checked teams, and dispatch backup when plans change — plus one place to reschedule and track visits. Many independent cleaners do excellent work; we built Empire for people who want that quality with predictable scheduling, documented STR turnovers, and a partner who answers the phone when something shifts last minute.",
 
   /** Home — FAQ (objections before checkout). */
   homeFaqTitle: "Common questions",

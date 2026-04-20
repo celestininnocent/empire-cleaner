@@ -3,11 +3,11 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarClock,
-  Camera,
   CheckCircle2,
   ClipboardList,
   Home,
   Lock,
+  MapPin,
   Quote,
   ShieldCheck,
   Sparkles,
@@ -19,6 +19,7 @@ import { siteConfig } from "@/config/site";
 import { StickyBookCta } from "@/components/home/sticky-book-cta";
 import { SiteShell } from "@/components/site-shell";
 import { buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -78,15 +79,18 @@ export default function HomePage() {
   );
 
   return (
-    <SiteShell>
+    <SiteShell marketingHeader>
       <div className="pb-24 md:pb-0">
         <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-background via-background to-primary/[0.03]">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-2 lg:items-start lg:gap-14 lg:py-24">
             <div className="space-y-5">
-              <p className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-                {siteConfig.businessName} · Portland area
-              </p>
+              <div className="space-y-1.5">
+                <p className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                  {siteConfig.businessName} · Portland area
+                </p>
+                <p className="text-xs font-medium text-muted-foreground">{siteConfig.heroLocalLine}</p>
+              </div>
               <h1 className="text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
                 {siteConfig.heroTitle}
               </h1>
@@ -160,14 +164,15 @@ export default function HomePage() {
                   Book a clean
                 </Link>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Prefer to talk?{" "}
+              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+                {siteConfig.heroCallLineBeforePhone}{" "}
                 <a
                   href={`tel:${siteConfig.supportPhoneTel}`}
                   className="font-semibold text-primary underline-offset-4 hover:underline"
                 >
-                  Call {siteConfig.supportPhoneDisplay}
-                </a>
+                  {siteConfig.supportPhoneDisplay}
+                </a>{" "}
+                {siteConfig.heroCallLineAfterPhone}
               </p>
 
               <div className="flex flex-wrap gap-2 pt-1">
@@ -346,7 +351,12 @@ export default function HomePage() {
             <div className="mt-10 grid gap-6 md:grid-cols-2">
               <figure className="relative rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
                 <Quote className="absolute right-4 top-4 size-8 text-primary/15" aria-hidden />
-                <StarRating />
+                <div className="flex flex-wrap items-center gap-2">
+                  <StarRating />
+                  <Badge variant="secondary" className="text-[10px] font-normal uppercase tracking-wide">
+                    {siteConfig.homeSocialProofServiceTag1}
+                  </Badge>
+                </div>
                 <blockquote className="mt-2 text-pretty text-sm leading-relaxed text-foreground">
                   “{siteConfig.homeSocialProofQuote1}”
                 </blockquote>
@@ -359,7 +369,12 @@ export default function HomePage() {
               </figure>
               <figure className="relative rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
                 <Quote className="absolute right-4 top-4 size-8 text-primary/15" aria-hidden />
-                <StarRating />
+                <div className="flex flex-wrap items-center gap-2">
+                  <StarRating />
+                  <Badge variant="secondary" className="text-[10px] font-normal uppercase tracking-wide">
+                    {siteConfig.homeSocialProofServiceTag2}
+                  </Badge>
+                </div>
                 <blockquote className="mt-2 text-pretty text-sm leading-relaxed text-foreground">
                   “{siteConfig.homeSocialProofQuote2}”
                 </blockquote>
@@ -377,20 +392,21 @@ export default function HomePage() {
         <section className="border-b border-border/60 py-14 sm:py-16">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{siteConfig.homeVisualProofTitle}</h2>
-              <p className="mt-2 text-pretty text-muted-foreground">{siteConfig.homeVisualProofLead}</p>
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{siteConfig.homeServiceAreaTitle}</h2>
+              <p className="mt-2 text-pretty text-muted-foreground">{siteConfig.homeServiceAreaLead}</p>
             </div>
-            <div className="mt-10 grid gap-8 lg:grid-cols-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex aspect-[4/3] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/90 bg-muted/30 p-3 text-center">
-                  <Camera className="mb-2 size-8 text-muted-foreground/60" aria-hidden />
-                  <p className="text-xs font-medium text-muted-foreground">{siteConfig.homeVisualProofBeforeCaption}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground/80">Add your photo</p>
-                </div>
-                <div className="flex aspect-[4/3] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/25 bg-primary/[0.04] p-3 text-center">
-                  <Camera className="mb-2 size-8 text-primary/50" aria-hidden />
-                  <p className="text-xs font-medium text-muted-foreground">{siteConfig.homeVisualProofAfterCaption}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground/80">Add your photo</p>
+            <div className="mt-10 grid gap-8 lg:grid-cols-2 lg:items-start">
+              <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <MapPin className="size-5" aria-hidden />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-foreground">{siteConfig.homeServiceAreaCardTitle}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {siteConfig.homeServiceAreaCities}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
@@ -518,7 +534,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      <StickyBookCta />
+      <StickyBookCta label={siteConfig.homeStickyCtaLabel} />
     </SiteShell>
   );
 }

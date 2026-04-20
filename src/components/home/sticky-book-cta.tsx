@@ -4,8 +4,8 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Fixed bottom bar on small screens so “Book” stays one tap away. */
-export function StickyBookCta() {
+/** Fixed bottom bar on small screens so the primary booking action stays one tap away. */
+export function StickyBookCta({ label }: { label: string }) {
   return (
     <div
       className={cn(
@@ -14,7 +14,7 @@ export function StickyBookCta() {
     >
       <div className="mx-auto flex max-w-lg items-center justify-center px-4">
         <Link href="/book" className={cn(buttonVariants({ size: "lg" }), "w-full max-w-md font-semibold shadow-md")}>
-          Book a clean
+          {label}
         </Link>
       </div>
     </div>

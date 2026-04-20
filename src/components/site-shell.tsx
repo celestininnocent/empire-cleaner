@@ -19,12 +19,16 @@ const primaryNav = [
 export async function SiteShell({
   children,
   cta,
+  /** Use on the public homepage so signed-in users don’t see email / “signed in” clutter in the header. */
+  marketingHeader = false,
 }: {
   children: React.ReactNode;
   cta?: React.ReactNode;
+  marketingHeader?: boolean;
 }) {
   const user = await getServerUser();
   const userEmail = user?.email ?? null;
+  const authPresentation = marketingHeader ? "marketing" : "default";
 
   return (
     <div className="flex min-h-full flex-col">
@@ -62,8 +66,10 @@ export async function SiteShell({
             <span className="max-w-[9rem] truncate sm:max-w-none">{siteConfig.supportPhoneDisplay}</span>
           </a>
           <div className="flex items-center gap-2">
-            <MobileNav userEmail={userEmail} />
-            {cta ?? <AuthHeaderActions userEmail={userEmail} />}
+            <MobileNav userEmail={userEmail} presentation={authPresentation} />
+            {cta ?? (
+              <AuthHeaderActions userEmail={userEmail} presentation={authPresentation} />
+            )}
           </div>
         </div>
       </header>
