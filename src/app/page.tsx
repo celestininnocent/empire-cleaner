@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { HomeHeroVisual } from "@/components/home/home-hero-visual";
 import { StickyBookCta } from "@/components/home/sticky-book-cta";
 import { SiteShell } from "@/components/site-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -215,6 +216,7 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
+          <HomeHeroVisual />
         </section>
 
         <section className="border-b border-border/60 bg-muted/15 py-12 sm:py-14">

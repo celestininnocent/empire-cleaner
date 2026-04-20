@@ -31,6 +31,11 @@ export const siteConfig = {
   heroCallLineBeforePhone: "Need help before booking? Call us at",
   heroCallLineAfterPhone:
     "— we’re happy to walk through pricing, timing, and what to expect.",
+  /** Hero image — swap via NEXT_PUBLIC_HOME_HERO_IMAGE_URL (e.g. /marketing/hero.jpg in public). */
+  homeHeroVisualAlt:
+    "Bright, detailed home cleaning — living space after a professional visit",
+  homeHeroVisualCaption: "Professional-grade results for Portland-area homes and rentals.",
+
   /** Featured in hero — replace with a real Google review when you have permission. */
   heroTestimonialQuote:
     "On time, spotless kitchen and baths, and the price matched the quote exactly. Wish we’d switched sooner.",
@@ -72,14 +77,14 @@ export const siteConfig = {
     "Know your total before checkout — sized to your rooms, baths, and service level.",
   homeWhyChoose2Title: "Reliable cleaners",
   homeWhyChoose2Body:
-    "Insured, background-checked teams with notes, access details, and dispatch support behind every job.",
+    "Reliable teams with clear communication, documented turnovers, and backup when your plans change.",
   homeWhyChoose3Title: "Easy rescheduling",
   homeWhyChoose3Body:
     "Change visits in your account, message what matters, and keep STR turnovers on the calendar.",
 
   /** Home — who we serve. */
   homePathsTitle: "Cleaning for every kind of home",
-  homePathsLead: "Choose the path that matches how you use your space — same trusted team, tailored to your situation.",
+  homePathsLead: "Choose the service that fits your home or rental — same trusted team, tailored to you.",
   homePathHomeTitle: "Homeowners",
   homePathHomeBody:
     "Residential cleaning with upfront pricing and an account you control — ideal for busy households in Portland and nearby.",
@@ -95,8 +100,7 @@ export const siteConfig = {
 
   /** Home — social proof section (names & neighborhoods — update with real reviews). */
   homeSocialProofTitle: "Loved by Portland neighbors & rental hosts",
-  homeSocialProofLead:
-    "A few recent reviews — ask us for more references or read us on Google anytime.",
+  homeSocialProofLead: "Recent reviews — read more on Google or ask us for references.",
   homeSocialProofQuote1:
     "Transparent pricing, showed up on time, and the place smelled amazing after. Booking online took maybe five minutes.",
   homeSocialProofAttribution1: "James K. · Alberta Arts · Home cleaning",
@@ -124,7 +128,7 @@ export const siteConfig = {
   /** Service area + checklist (no image placeholders — add photography later if desired). */
   homeServiceAreaTitle: "Local service, real accountability",
   homeServiceAreaLead:
-    "Same online booking flow whether you’re in the core city or a nearby suburb — dispatch-backed crews and documented visits.",
+    "Same simple booking in the city or suburbs — reliable teams with clear communication and documented turnovers.",
   homeServiceAreaCardTitle: "Portland metro & nearby",
   homeServiceAreaCities:
     "Portland · Beaverton · Hillsboro · Lake Oswego · Gresham · Tigard · Vancouver, WA · and nearby ZIPs",
@@ -141,7 +145,7 @@ export const siteConfig = {
   /** What’s included vs hiring independent cleaners. */
   homeWhatsIncludedTitle: "What’s included in your clean",
   homeWhatsIncludedIntro:
-    "Every visit is scoped to your booking — typical residential service covers living areas, kitchen, baths, and floors you select at quote time.",
+    "Each visit matches what you booked — living areas, kitchen, baths, and floors per your quote.",
   homeWhatsIncludedItems: [
     "Dusting & wiping of agreed surfaces",
     "Kitchen counters, appliance fronts, and sink",
@@ -151,54 +155,51 @@ export const siteConfig = {
   ] as const,
   homeVsIndependentsTitle: "Why homeowners choose Empire over independent cleaners",
   homeVsIndependentsBody:
-    "You get upfront pricing, insurance, background-checked teams, and dispatch backup when plans change — plus one place to reschedule and track visits. Many independent cleaners do excellent work; we built Empire for people who want that quality with predictable scheduling, documented STR turnovers, and a partner who answers the phone when something shifts last minute.",
+    "Upfront pricing, insurance, and background-checked teams — plus one account to reschedule and track visits. Solo cleaners can be great; we’re built for homeowners and hosts who want predictable scheduling, documented STR work, and a team that picks up the phone when plans shift.",
 
   /** Home — FAQ (objections before checkout). */
   homeFaqTitle: "Common questions",
-  homeFaqSubtitle:
-    "Straight answers on price, insurance, satisfaction, and scheduling — before you check out.",
+  homeFaqSubtitle: "Short answers on price, insurance, and scheduling before you check out.",
   homeFaq: [
     {
       q: "How much does it cost?",
-      a: "Your total depends on how many bedrooms and bathrooms you have, approximate square footage, and the service level you choose (for example standard vs. deeper reset). You’ll see the full dollar amount on the checkout screen before you pay — no hidden fees or surprise charges at the door.",
+      a: "It’s based on bedrooms, bathrooms, square footage, and service level. You’ll see the full total on the checkout screen before you pay — no surprise charges at the door.",
     },
     {
       q: "What if I’m not happy with the visit?",
-      a: "We offer a 24-hour satisfaction guarantee on documented service areas. Reach out within 24 hours of your visit and we’ll make it right per our policy. Full details are in our Terms of Service.",
+      a: "We have a 24-hour satisfaction guarantee on documented areas. Contact us within 24 hours and we’ll make it right — see our Terms of Service.",
     },
     {
       q: "Are you insured?",
-      a: "Yes. We carry general liability insurance for peace of mind on every job. That protects you in the rare case of accidental damage during service, in line with our Terms of Service.",
+      a: "Yes — general liability on every job. Rare damage claims are handled per our Terms of Service.",
     },
     {
       q: "Do I need to be home?",
-      a: "Many customers provide access instructions at booking (lockbox, code, or concierge). Choose what works for you; we’ll follow the notes you leave.",
+      a: "Not necessarily. Many people leave lockbox or access notes; we follow whatever you add at booking.",
     },
     {
       q: "Can I reschedule?",
-      a: "Yes. Sign in to My account to view upcoming visits and request changes. Cancellations with less than 24 hours’ notice may incur a fee — see our Terms of Service for cancellation and access policies.",
+      a: "Yes, in My account. Changes inside 24 hours may carry a fee — see Terms of Service.",
     },
     {
       q: "What time will you arrive?",
-      a: "We schedule visits within an arrival window (shown at booking and in your confirmation). You’ll get the planned window before we arrive; if dispatch needs to adjust, we’ll reach out by phone or text.",
+      a: "You’ll get an arrival window at booking and in your confirmation. If timing shifts, we’ll call or text.",
     },
     {
       q: "Do you bring supplies and equipment?",
-      a: "Our teams arrive with professional-grade supplies and equipment for the service level you booked. If you prefer specific products for sensitive surfaces, leave them out with a note in your booking.",
+      a: "Yes — pros bring supplies for the level you booked. Prefer your own products on sensitive surfaces? Leave them out and note it.",
     },
     {
       q: "What about pets?",
-      a: "Tell us about pets in your booking notes (allergies, crating, or shy animals). We work around your household — if a pet makes a room unsafe to enter, we’ll document and coordinate with you.",
+      a: "Note pets in your booking (allergies, crates, shy animals). If a room isn’t safe to enter, we’ll coordinate with you.",
     },
     {
       q: "What happens right after I book?",
-      a: "You’ll receive a confirmation and receipt by email, your visit appears in My account, and you can add or edit access notes anytime before the appointment. Closer to the date, you’ll see crew assignment when it’s set.",
+      a: "Email confirmation and receipt, visit in My account, and you can edit access notes anytime. Crew assignment shows when it’s set.",
     },
   ],
 
   footer: "Professional cleaning · Straightforward booking · Here when you need us",
-  /** Footer — internal tools (not shown in main header). */
-  footerTeamToolsLead: "Team & tools",
 
   /** Display and `tel:` href — support line for crew access, booking, and general help. */
   supportPhoneDisplay: SUPPORT_PHONE_DISPLAY,

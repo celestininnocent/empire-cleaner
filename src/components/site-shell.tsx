@@ -114,28 +114,6 @@ export async function SiteShell({
             Property managers
           </Link>
         </p>
-        <p className="mt-6 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground/80">{siteConfig.footerTeamToolsLead}</span>
-          <span className="mx-1.5" aria-hidden>
-            ·
-          </span>
-          <Link href="/admin" className="font-medium text-primary underline-offset-4 hover:underline">
-            {siteConfig.nav.admin}
-          </Link>
-          <span className="mx-1.5 text-border" aria-hidden>
-            ·
-          </span>
-          <Link href="/field" className="font-medium text-primary underline-offset-4 hover:underline">
-            {siteConfig.nav.field}
-          </Link>
-          <span className="mx-1.5 text-border" aria-hidden>
-            ·
-          </span>
-          <Link href="/field/demo" className="font-medium text-primary underline-offset-4 hover:underline">
-            Crew route demo
-          </Link>
-          <span className="text-muted-foreground"> — sample route &amp; checklist</span>
-        </p>
       </footer>
     </div>
   );
