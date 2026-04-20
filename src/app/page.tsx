@@ -96,9 +96,19 @@ export default function HomePage() {
                 {siteConfig.heroTitle}
               </h1>
               <p className="max-w-xl text-pretty text-lg text-muted-foreground">{siteConfig.heroLead}</p>
-              <p className="max-w-xl text-pretty text-base font-medium leading-relaxed text-foreground/95">
-                {siteConfig.heroEmotionalLine}
-              </p>
+              <div className="flex max-w-xl flex-wrap gap-2 pt-1">
+                {[siteConfig.heroAudienceChip1, siteConfig.heroAudienceChip2, siteConfig.heroAudienceChip3].map(
+                  (label) => (
+                    <span
+                      key={label}
+                      className="inline-flex items-center rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-xs font-medium text-foreground"
+                    >
+                      {label}
+                    </span>
+                  )
+                )}
+              </div>
+              <p className="max-w-xl text-xs text-muted-foreground">{siteConfig.heroAudienceFoot}</p>
 
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {googleReviewUrl ? (
@@ -139,7 +149,6 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-
               <figure className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm">
                 <StarRating />
                 <blockquote className="mt-2 text-pretty text-sm font-medium leading-relaxed text-foreground">
@@ -518,20 +527,38 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              Still unsure?{" "}
-              <a
-                href={`tel:${siteConfig.supportPhoneTel}`}
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Call {siteConfig.supportPhoneDisplay}
-              </a>{" "}
-              or{" "}
-              <Link href="/book" className="font-medium text-primary underline-offset-4 hover:underline">
-                start a booking
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              {siteConfig.homeFaqFooterNote}{" "}
+              <Link href="/terms" className="font-medium text-primary underline-offset-4 hover:underline">
+                Terms of Service
               </Link>
-              .
             </p>
+            <div className="mt-8 rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/[0.07] to-background p-6 shadow-sm sm:p-8">
+              <p className="text-center text-lg font-semibold text-foreground">{siteConfig.homeStillUnsureTitle}</p>
+              <p className="mx-auto mt-1 max-w-md text-center text-sm text-muted-foreground">
+                {siteConfig.homeStillUnsureLead}
+              </p>
+              <div className="mx-auto mt-5 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+                <a
+                  href={`tel:${siteConfig.supportPhoneTel}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "w-full justify-center sm:w-auto sm:min-w-[200px]"
+                  )}
+                >
+                  Call {siteConfig.supportPhoneDisplay}
+                </a>
+                <Link
+                  href="/book"
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "w-full justify-center font-semibold sm:w-auto sm:min-w-[200px]"
+                  )}
+                >
+                  {siteConfig.homeStickyCtaLabel}
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       </div>

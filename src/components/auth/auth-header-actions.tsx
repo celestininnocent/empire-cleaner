@@ -47,21 +47,14 @@ export function AuthHeaderActions({
   }
 
   if (presentation === "marketing") {
+    /* My account is already in the main nav — keep the utility row to one clear booking CTA. */
     return (
-      <>
-        <Link
-          href="/portal"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "hidden sm:inline-flex font-medium"
-          )}
-        >
-          My account
-        </Link>
-        <Link href="/book" className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}>
-          Book a clean
-        </Link>
-      </>
+      <Link
+        href="/book"
+        className={cn(buttonVariants({ size: "default" }), "hidden font-semibold sm:inline-flex")}
+      >
+        Book a clean
+      </Link>
     );
   }
 

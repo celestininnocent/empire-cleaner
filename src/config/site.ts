@@ -22,19 +22,24 @@ export const siteConfig = {
    */
   heroTitle: "Reliable Portland home cleaning with instant online booking",
   heroLead:
-    "See your full price before you pay, then lock in a visit in minutes — one-time or recurring.",
-  heroEmotionalLine:
-    "Get your evenings back at home — or stress-free turnovers that don’t bump guest check-in.",
+    "See your full price before you pay, then book a one-time or recurring clean in minutes.",
+  /** Audience chips under the lead — segments are detailed below the fold. */
+  heroAudienceChip1: "Homeowners",
+  heroAudienceChip2: "Airbnb & STR hosts",
+  heroAudienceChip3: "Property managers",
+  heroAudienceFoot: "Across Portland & the metro",
   /** Short local line under the hero badge — concrete metro proof. */
   heroLocalLine: "Serving Portland, Beaverton, Hillsboro, Lake Oswego & nearby",
   /** Hero phone line — link wraps the number in the page. */
   heroCallLineBeforePhone: "Need help before booking? Call us at",
   heroCallLineAfterPhone:
     "— we’re happy to walk through pricing, timing, and what to expect.",
-  /** Hero image — swap via NEXT_PUBLIC_HOME_HERO_IMAGE_URL (e.g. /marketing/hero.jpg in public). */
-  homeHeroVisualAlt:
-    "Bright, detailed home cleaning — living space after a professional visit",
-  homeHeroVisualCaption: "Professional-grade results for Portland-area homes and rentals.",
+  /** Hero image pair — optional second env URL; defaults to stock photos. */
+  homeHeroVisualAlt1: "Clean, bright living space after a professional visit",
+  homeHeroVisualAlt2: "Kitchen and detail work — professional home cleaning",
+  homeHeroVisualLabel1: "Whole-home resets",
+  homeHeroVisualLabel2: "Kitchen & detail",
+  homeHeroVisualCaption: "Two places we show up for every booking — add your own photos anytime.",
 
   /** Featured in hero — replace with a real Google review when you have permission. */
   heroTestimonialQuote:
@@ -159,7 +164,10 @@ export const siteConfig = {
 
   /** Home — FAQ (objections before checkout). */
   homeFaqTitle: "Common questions",
-  homeFaqSubtitle: "Short answers on price, insurance, and scheduling before you check out.",
+  homeFaqSubtitle: "Six quick answers — call us for anything specific to your home.",
+  homeFaqFooterNote: "More detail in our Terms — or call for your situation.",
+  homeStillUnsureTitle: "Still unsure?",
+  homeStillUnsureLead: "Talk to us or see your price online — you only pay when you complete checkout.",
   homeFaq: [
     {
       q: "How much does it cost?",
@@ -174,24 +182,12 @@ export const siteConfig = {
       a: "Yes — general liability on every job. Rare damage claims are handled per our Terms of Service.",
     },
     {
-      q: "Do I need to be home?",
-      a: "Not necessarily. Many people leave lockbox or access notes; we follow whatever you add at booking.",
-    },
-    {
       q: "Can I reschedule?",
       a: "Yes, in My account. Changes inside 24 hours may carry a fee — see Terms of Service.",
     },
     {
-      q: "What time will you arrive?",
-      a: "You’ll get an arrival window at booking and in your confirmation. If timing shifts, we’ll call or text.",
-    },
-    {
-      q: "Do you bring supplies and equipment?",
-      a: "Yes — pros bring supplies for the level you booked. Prefer your own products on sensitive surfaces? Leave them out and note it.",
-    },
-    {
-      q: "What about pets?",
-      a: "Note pets in your booking (allergies, crates, shy animals). If a room isn’t safe to enter, we’ll coordinate with you.",
+      q: "What about timing, access, pets, and supplies?",
+      a: "You’ll get an arrival window at booking and in your confirmation. Not home? Add lockbox or access notes. We bring pro supplies for the level you booked — note pets and any preferred products in your booking. If timing shifts, we’ll call or text.",
     },
     {
       q: "What happens right after I book?",
