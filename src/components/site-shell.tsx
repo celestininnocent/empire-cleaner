@@ -8,9 +8,14 @@ import { getServerUser } from "@/lib/supabase/get-server-user";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const links = [
+const primaryNav = [
   { href: "/book", label: siteConfig.nav.book },
   { href: "/portal", label: siteConfig.nav.portal },
+  { href: "/hosts", label: siteConfig.nav.hosts },
+  { href: "/property-managers", label: siteConfig.nav.propertyManagers },
+];
+
+const teamNav = [
   { href: "/admin", label: siteConfig.nav.admin },
   { href: "/field", label: siteConfig.nav.field },
 ];
@@ -36,16 +41,37 @@ export async function SiteShell({
             </span>
             <span className="hidden sm:inline">{siteConfig.businessName}</span>
           </Link>
-          <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
-            {links.map((l) => (
+          <nav
+            className="hidden max-w-3xl flex-1 flex-wrap items-center justify-center gap-x-0 gap-y-1 md:flex lg:max-w-none"
+            aria-label="Main"
+          >
+            {primaryNav.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "font-medium")}
               >
                 {l.label}
               </Link>
             ))}
+            <span
+              className="mx-0.5 hidden h-4 w-px shrink-0 bg-border/90 lg:block"
+              aria-hidden
+            />
+            <div className="flex flex-wrap items-center justify-center gap-x-0 gap-y-1">
+              {teamNav.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "text-xs font-normal text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
           </nav>
           <div className="flex items-center gap-2">
             <MobileNav userEmail={userEmail} />

@@ -15,14 +15,84 @@ export const siteConfig = {
   titleSuffix: "Premium cleaning services",
 
   metaDescription:
-    "Book cleaning online — one-time or recurring visits, clear pricing, and a simple account to manage your service.",
+    "Reliable Portland home cleaning — see your price upfront, book online in minutes, one-time or recurring. Insured team, satisfaction guarantee, easy rescheduling.",
 
   /**
-   * Home hero — written for homeowners; crew and owners use the nav for their tools.
+   * Home hero — outcome, location, and trust for cold traffic.
    */
-  heroTitle: "Cleaning that fits your schedule.",
+  heroTitle: "Reliable home cleaning in Portland.",
   heroLead:
-    "Book online in a few minutes, see your price up front, and choose one visit or a recurring plan. Sign in anytime to manage visits or your account.",
+    "Get instant pricing, book online in minutes, and choose one-time or recurring service.",
+  heroTrustLine: "Professional cleaners, clear pricing, easy rescheduling.",
+
+  /** Home — trust strip (first viewport). */
+  homeTrustInsured: "Fully insured",
+  homeTrustGuaranteeShort: "24-hour satisfaction guarantee",
+  homeTrustLocal: "Portland-area service",
+  homeTrustCheckout: "Secure checkout",
+
+  /** Home — buyer-focused feature column. */
+  homeFeatureQuoteTitle: "See your quote instantly",
+  homeFeatureQuoteBody:
+    "Bedrooms, baths, and square footage shape your price — you see the full total before you pay, with no surprises at checkout.",
+  homeFeatureScheduleTitle: "Pick one-time or recurring cleaning",
+  homeFeatureScheduleBody:
+    "Book a single reset or set up weekly, bi-weekly, or monthly visits — whatever fits your home.",
+  homeFeatureManageTitle: "Manage bookings without calling",
+  homeFeatureManageBody:
+    "After you book, sign in anytime to reschedule, see who we’re sending, and track your visits in one place.",
+
+  /** Home — who we serve. */
+  homePathsTitle: "Cleaning for every kind of home",
+  homePathsLead: "Choose the path that matches how you use your space — same trusted team, tailored to your situation.",
+  homePathHomeTitle: "Homeowners",
+  homePathHomeBody:
+    "Residential cleaning with upfront pricing and an account you control — ideal for busy households in Portland and nearby.",
+  homePathHomeCta: "Book a home clean",
+  homePathHostsTitle: "Short-term rentals & Airbnb",
+  homePathHostsBody:
+    "Turnover-ready cleaning with photo documentation and scheduling built around check-in and check-out.",
+  homePathHostsCta: "Cleaning for hosts",
+  homePathPmTitle: "Property managers",
+  homePathPmBody:
+    "Portfolio-scale turnover cleaning — one point of contact and clear communication across units.",
+  homePathPmCta: "Portfolio & B2B",
+
+  /** Home — how it works. */
+  homeProcessTitle: "How booking works",
+  homeProcessLead: "Three simple steps from quote to a spot on the calendar.",
+  homeProcess1Title: "Get your quote",
+  homeProcess1Body: "Tell us about your home and service level — your price appears before checkout.",
+  homeProcess2Title: "Choose your time",
+  homeProcess2Body: "Pick a visit that fits your schedule. Pay securely online to confirm.",
+  homeProcess3Title: "We clean",
+  homeProcess3Body:
+    "Our team arrives prepared with your notes. Manage or reschedule anytime from your account.",
+
+  /** Home — FAQ (objections before checkout). */
+  homeFaqTitle: "Common questions",
+  homeFaq: [
+    {
+      q: "How much does it cost?",
+      a: "Your quote is based on home size, bathrooms, square footage, and the service level you choose. You’ll see the full price before you pay — no hidden fees at checkout.",
+    },
+    {
+      q: "What if I’m not happy with the visit?",
+      a: "We offer a 24-hour satisfaction guarantee on documented areas. Let us know within a day and we’ll make it right. Full policy is in our Terms of Service.",
+    },
+    {
+      q: "Are you insured?",
+      a: "Yes — we carry general liability coverage for peace of mind on every job.",
+    },
+    {
+      q: "Do I need to be home?",
+      a: "Many customers provide access instructions at booking (lockbox, code, or concierge). Choose what works for you; we’ll follow the notes you leave.",
+    },
+    {
+      q: "Can I reschedule?",
+      a: "Yes. Sign in to your account to manage upcoming visits. Cancellations within 24 hours may incur a fee per our policies.",
+    },
+  ],
 
   footer: "Professional cleaning · Straightforward booking · Here when you need us",
 
@@ -47,8 +117,12 @@ export const siteConfig = {
   nav: {
     book: "Book",
     portal: "My account",
+    hosts: "Hosts & STR",
+    propertyManagers: "Property managers",
     admin: "Owner",
     field: "Crew app",
+    /** Footer / compact label for team-only tools. */
+    teamNavLabel: "Team",
   },
 
   stripeProductLine: "Recurring home clean",

@@ -9,9 +9,14 @@ import { buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const links = [
+const primaryNav = [
   { href: "/book", label: siteConfig.nav.book },
   { href: "/portal", label: siteConfig.nav.portal },
+  { href: "/hosts", label: siteConfig.nav.hosts },
+  { href: "/property-managers", label: siteConfig.nav.propertyManagers },
+];
+
+const teamNav = [
   { href: "/admin", label: siteConfig.nav.admin },
   { href: "/field", label: siteConfig.nav.field },
 ];
@@ -42,12 +47,25 @@ export function MobileNav({ userEmail }: { userEmail?: string | null }) {
           </div>
         ) : null}
         <nav className="mt-6 flex flex-col gap-1">
-          {links.map((l) => (
+          {primaryNav.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
               className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"
+            >
+              {l.label}
+            </Link>
+          ))}
+          <p className="mt-4 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {siteConfig.nav.teamNavLabel}
+          </p>
+          {teamNav.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {l.label}
             </Link>
