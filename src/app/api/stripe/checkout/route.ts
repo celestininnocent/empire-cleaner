@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStripe, getStripeEnvStatus } from "@/lib/stripe";
-import { calculateJobPriceCents } from "@/lib/pricing";
+import {
+  calculateIntroOncePriceCents,
+  calculateJobPriceCents,
+  calculateRecurringPriceCents,
+} from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import { siteConfig } from "@/config/site";
 import { getPropertyTypeLabel } from "@/lib/property-types";
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
     const referrerHost = getReferrerHost(attribution.referrerUrl);
     const userAgent = (request.headers.get("user-agent") ?? "").slice(0, 500);
 
-    const priceCents = calculateJobPriceCents({
+    const regularPriceCents = calculateJobPriceCents({
       bedrooms: body.bedrooms,
       bathrooms: body.bathrooms,
       squareFootage: body.squareFootage,
@@ -54,6 +58,10 @@ export async function POST(request: Request) {
       serviceTier: body.serviceTier,
       addOnIds: body.addOnIds,
     });
+    const priceCents =
+      body.bookingType === "once"
+        ? calculateIntroOncePriceCents(regularPriceCents)
+        : calculateRecurringPriceCents(regularPriceCents);
 
     if (!Number.isFinite(priceCents) || priceCents < 50) {
       return NextResponse.json(
@@ -124,6 +132,7 @@ export async function POST(request: Request) {
       zip: body.zip,
       scheduled_start: body.scheduledStart,
       price_cents: String(priceCents),
+      regular_price_cents: String(regularPriceCents),
       booking_type: bookingType,
       customer_notes: body.customerNotes || "",
       add_on_ids: body.addOnIds.join(","),

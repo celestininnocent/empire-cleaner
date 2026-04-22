@@ -40,6 +40,11 @@ export type BookingInput = {
   addOnIds?: AddOnId[];
 };
 
+/** Promo: discounted first clean to reduce first-time friction. */
+export const INTRO_ONCE_PRICE_CENTS = 14_900; // $149
+/** Recurring plans are priced below regular one-time rate. */
+export const RECURRING_DISCOUNT_PERCENT = 15; // 15% off per visit
+
 export function calculateJobPriceCents(input: BookingInput): number {
   const beds = Math.max(0, Math.min(10, Math.floor(input.bedrooms)));
   const baths = Math.max(1, Math.min(10, Math.floor(input.bathrooms)));
@@ -61,6 +66,15 @@ export function calculateJobPriceCents(input: BookingInput): number {
   const scaled = Math.round(base * propertyMult * tierMult);
   const addOns = getAddOnsTotalCents(input.addOnIds ?? []);
   return scaled + addOns;
+}
+
+export function calculateIntroOncePriceCents(regularPriceCents: number): number {
+  return Math.min(regularPriceCents, INTRO_ONCE_PRICE_CENTS);
+}
+
+export function calculateRecurringPriceCents(regularPriceCents: number): number {
+  const discounted = Math.round(regularPriceCents * (1 - RECURRING_DISCOUNT_PERCENT / 100));
+  return Math.max(50, discounted);
 }
 
 export function formatUsd(cents: number): string {

@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Building2, Calendar, Check, Loader2, Ruler } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { calculateJobPriceCents, formatUsd } from "@/lib/pricing";
+import {
+  calculateIntroOncePriceCents,
+  calculateJobPriceCents,
+  calculateRecurringPriceCents,
+  formatUsd,
+} from "@/lib/pricing";
 import { PROPERTY_TYPES, type PropertyTypeId } from "@/lib/property-types";
 import { SERVICE_TIERS, type ServiceTierId } from "@/lib/service-tiers";
 import { ADD_ONS, getAddOnsTotalCents, type AddOnId } from "@/lib/add-ons";
@@ -149,7 +154,7 @@ export function BookingForm() {
     setAttribution(firstTouch);
   }, []);
 
-  const priceCents = useMemo(() => {
+  const regularPriceCents = useMemo(() => {
     return calculateJobPriceCents({
       bedrooms: Number(bedrooms) || 0,
       bathrooms: Number(bathrooms) || 1,
@@ -159,6 +164,16 @@ export function BookingForm() {
       addOnIds,
     });
   }, [bedrooms, bathrooms, sqft, propertyType, serviceTier, addOnIds]);
+  const introPriceCents = useMemo(
+    () => calculateIntroOncePriceCents(regularPriceCents),
+    [regularPriceCents]
+  );
+  const recurringPriceCents = useMemo(
+    () => calculateRecurringPriceCents(regularPriceCents),
+    [regularPriceCents]
+  );
+  const activePriceCents = bookingType === "once" ? introPriceCents : recurringPriceCents;
+  const recurringSavingsCents = Math.max(0, regularPriceCents - recurringPriceCents);
 
   const addOnTotalCents = useMemo(() => getAddOnsTotalCents(addOnIds), [addOnIds]);
 
@@ -354,14 +369,26 @@ export function BookingForm() {
             <CardTitle className="text-lg">Your flat rate</CardTitle>
             <CardDescription>
               {bookingType === "once"
-                ? "Total for this visit (before tax & tips) — what you pay at checkout."
-                : "Per visit on your plan (before tax & tips)."}
+                ? "Intro first-clean price (before tax & tips) — paid at checkout."
+                : "Per visit on your plan (before tax & tips), discounted vs one-time."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-semibold tracking-tight text-primary">
-              {formatUsd(priceCents)}
+              {formatUsd(activePriceCents)}
             </p>
+            {bookingType === "once" && regularPriceCents > introPriceCents ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Regular one-time rate:{" "}
+                <span className="line-through">{formatUsd(regularPriceCents)}</span>
+              </p>
+            ) : null}
+            {bookingType === "recurring" ? (
+              <p className="mt-1 text-xs font-medium text-emerald-700">
+                Save {formatUsd(recurringSavingsCents)} per visit vs regular one-time rate (
+                {formatUsd(regularPriceCents)}).
+              </p>
+            ) : null}
             <p className="mt-2 text-xs text-muted-foreground">{siteConfig.bookingPriceHint}</p>
             {addOnIds.length ? (
               <p className="mt-2 text-xs text-muted-foreground">
@@ -446,7 +473,7 @@ export function BookingForm() {
                 size="sm"
                 onClick={() => setBookingType("once")}
               >
-                One-time clean
+                One-time clean (intro)
               </Button>
               <Button
                 type="button"
@@ -457,6 +484,10 @@ export function BookingForm() {
                 Recurring plan
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              One-time uses our intro first-clean offer. Recurring keeps your per-visit rate lower than
+              regular one-time pricing.
+            </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             {bookingType === "recurring" ? (
