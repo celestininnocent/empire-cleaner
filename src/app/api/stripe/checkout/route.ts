@@ -138,6 +138,11 @@ export async function POST(request: Request) {
       landing_path: attribution.landingPath,
       user_agent: userAgent,
     };
+    const stripeCustomText = {
+      submit: {
+        message: siteConfig.bookingStripeTrustMessage,
+      },
+    } as const;
 
     if (bookingType === "once") {
       const session = await stripe.checkout.sessions.create({
@@ -149,6 +154,7 @@ export async function POST(request: Request) {
           ...commonMeta,
           frequency: "none",
         },
+        custom_text: stripeCustomText,
         line_items: [
           {
             price_data: {
@@ -181,6 +187,7 @@ export async function POST(request: Request) {
         ...commonMeta,
         frequency,
       },
+      custom_text: stripeCustomText,
       subscription_data: {
         metadata: {
           frequency,

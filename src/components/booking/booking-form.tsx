@@ -639,6 +639,9 @@ export function BookingForm() {
             <span>{siteConfig.bookTrustInsurance}</span>
           </li>
         </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          These same trust protections appear again on secure Stripe checkout.
+        </p>
       </div>
 
       <div className="flex items-start gap-3 rounded-lg border border-border/80 bg-muted/15 p-4">

@@ -342,6 +342,9 @@ export const siteConfig = {
   bookTrustPhotos: "Proof-of-clean photos on visits for quality you can see.",
   bookTrustInsurance:
     "Fully insured — general liability coverage for peace of mind on every job.",
+  /** Shown on Stripe-hosted checkout as an extra reassurance line. */
+  bookingStripeTrustMessage:
+    "24-hour satisfaction guarantee • Fully insured • Secure Stripe checkout",
   bookingPriceHint:
     "One clear total for your home size and service level before you pay.",
   bookingContactTitle: "Confirmation & receipts",
