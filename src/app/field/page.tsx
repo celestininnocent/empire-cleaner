@@ -89,7 +89,7 @@ export default async function FieldPage() {
 
   const user = await getServerUser();
   if (!user) {
-    redirect("/login?next=/field");
+    redirect("/login?next=/crew");
   }
 
   const supabase = await createClient();
@@ -190,7 +190,7 @@ export default async function FieldPage() {
             <p className="mt-3 text-sm text-muted-foreground">{explained.sub}</p>
           ) : null}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/login?next=/field" className={cn(buttonVariants({ variant: "outline" }))}>
+            <Link href="/login?next=/crew" className={cn(buttonVariants({ variant: "outline" }))}>
               Switch account
             </Link>
             <Link href="/" className={cn(buttonVariants({ className: "" }))}>

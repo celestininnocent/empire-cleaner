@@ -1,8 +1,10 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { applySubdomainRouting } from "@/lib/subdomain-routing";
+import { applyCrewPublicAlias, applySubdomainRouting } from "@/lib/subdomain-routing";
 
 export async function middleware(request: NextRequest) {
+  const crewAlias = applyCrewPublicAlias(request);
+  if (crewAlias) return crewAlias;
   const routed = applySubdomainRouting(request);
   if (routed) return routed;
   return await updateSession(request);

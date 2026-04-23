@@ -1,6 +1,41 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
+ * Public short URL for the crew field app: `/crew` → same as `/field` (canonical).
+ * Demo stays on the primary host (`/field/demo`), same as today.
+ * When `NEXT_PUBLIC_CREW_HOST` is set, non-demo targets redirect there in one hop.
+ */
+export function applyCrewPublicAlias(request: NextRequest): NextResponse | null {
+  const path = request.nextUrl.pathname;
+  if (!path.startsWith("/crew")) return null;
+
+  const suffix = path === "/crew" ? "" : path.slice("/crew".length);
+  const fieldPath = `/field${suffix}`;
+
+  const url = request.nextUrl.clone();
+  if (fieldPath.startsWith("/field/demo")) {
+    url.pathname = fieldPath;
+    return NextResponse.redirect(url, 308);
+  }
+
+  const crewHost = process.env.NEXT_PUBLIC_CREW_HOST?.trim().toLowerCase();
+  const rawHost = request.headers.get("host")?.split(":")[0]?.toLowerCase();
+
+  if (crewHost && rawHost && rawHost !== crewHost) {
+    const target = new URL(request.url);
+    target.hostname = crewHost;
+    target.protocol = "https:";
+    target.pathname = fieldPath;
+    target.search = request.nextUrl.search;
+    return NextResponse.redirect(target, 308);
+  }
+
+  url.pathname = fieldPath;
+  url.search = request.nextUrl.search;
+  return NextResponse.redirect(url, 308);
+}
+
+/**
  * Optional split hosts for internal tools (set in production on Vercel + DNS).
  * When unset (e.g. local dev), all routes stay on the default host.
  */

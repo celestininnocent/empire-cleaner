@@ -15,7 +15,7 @@ export default function FieldDemoPage() {
         <FieldRouteHeader
           headline={siteConfig.fieldDemoHeadline}
           sub={siteConfig.fieldDemoSub}
-          ctaHref="/field"
+          ctaHref="/crew"
           ctaLabel="Live crew app"
         />
         <FieldShiftDemo />

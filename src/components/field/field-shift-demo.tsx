@@ -135,7 +135,7 @@ export function FieldShiftDemo() {
         <div className="flex items-center gap-2 font-medium text-amber-950 dark:text-amber-100">
           <Sparkles className="size-4 shrink-0" />
           Interactive demo — nothing is saved. Your real route is on{" "}
-          <span className="font-semibold">/field</span> after you&apos;re on a crew.
+          <span className="font-semibold">/crew</span> after you&apos;re on a crew.
         </div>
       </div>
 

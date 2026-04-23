@@ -186,7 +186,7 @@ export function HiringPipeline({
         prev.app_access_role !== "admin"
       ) {
         setSuccess(
-          "Stage updated — pick a crew below and click “Grant crew app access” so they can open the crew app (/field)."
+          "Stage updated — pick a crew below and click “Grant crew app access” so they can open the crew app (/crew)."
         );
       }
     } catch (err) {
@@ -535,7 +535,7 @@ export function HiringPipeline({
                           null
                         )}
                         aria-label={`Grant crew app access for ${a.email}`}
-                        title="Grants /field for this email. Crew follows ZIP when it matches a route; otherwise the default crew."
+                        title="Grants /crew for this email. Crew follows ZIP when it matches a route; otherwise the default crew."
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -575,7 +575,7 @@ export function HiringPipeline({
                       ) : null}
                       <p className="text-[11px] leading-snug text-muted-foreground">
                         After you click, this address can use the crew app at{" "}
-                        <span className="font-medium text-foreground">/field</span> (invite email if
+                        <span className="font-medium text-foreground">/crew</span> (invite email if
                         they don&apos;t have an account yet).
                       </p>
                       <div className="space-y-1.5 border-t border-border/60 pt-2">

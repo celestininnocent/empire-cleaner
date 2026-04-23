@@ -53,7 +53,7 @@ async function notifyApplicantAccessGranted(input: {
   const to = input.phone?.trim() ? normalizeUsPhoneToE164(input.phone) : null;
   if (!to) return;
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const targetPath = input.role === "admin" ? "/admin" : "/field";
+  const targetPath = input.role === "admin" ? "/admin" : "/crew";
   const roleLabel = input.role === "admin" ? "owner" : "crew";
   const actionText =
     input.mode === "invited"
@@ -210,7 +210,7 @@ export async function approveApplicantForCrewAction(
   const existing = await findAuthUserByEmail(sb, email);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackUrl = `${appUrl.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent("/field")}`;
+  const callbackUrl = `${appUrl.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent("/crew")}`;
 
   async function syncProfileFromApplicant(
     userId: string,
@@ -243,7 +243,7 @@ export async function approveApplicantForCrewAction(
     return {
       mode: "linked",
       message:
-        "They already have an account — we set them as cleaner and assigned the crew. They can open the Crew app (/field).",
+        "They already have an account — we set them as cleaner and assigned the crew. They can open the Crew app (/crew).",
       crewTeamId: resolvedTeamId,
     };
   }
@@ -272,7 +272,7 @@ export async function approveApplicantForCrewAction(
       return {
         mode: "linked",
         message:
-          "They already have an account (invite was not needed) — linked to the crew. They can use /field.",
+          "They already have an account (invite was not needed) — linked to the crew. They can use /crew.",
         crewTeamId: resolvedTeamId,
       };
     }

@@ -82,7 +82,7 @@ export function AuthHeaderActions({
           <DropdownMenuItem render={<Link href="/admin" className="cursor-pointer" />}>
             {siteConfig.nav.admin}
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/field" className="cursor-pointer" />}>
+          <DropdownMenuItem render={<Link href="/crew" className="cursor-pointer" />}>
             {siteConfig.nav.field}
           </DropdownMenuItem>
           <DropdownMenuItem render={<Link href="/portal" className="cursor-pointer" />}>
