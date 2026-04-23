@@ -101,6 +101,15 @@ export async function SiteShell({
           <span className="text-border" aria-hidden>
             ·
           </span>
+          <a
+            href={`mailto:${siteConfig.supportEmail}`}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {siteConfig.supportEmail}
+          </a>
+          <span className="text-border" aria-hidden>
+            ·
+          </span>
           <Link href="/hosts" className="font-medium text-primary underline-offset-4 hover:underline">
             Hosts &amp; STR
           </Link>

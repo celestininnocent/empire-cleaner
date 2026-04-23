@@ -11,6 +11,16 @@ export default function BookPage() {
             {siteConfig.bookHeadline}
           </h1>
           <p className="text-muted-foreground">{siteConfig.bookSub}</p>
+          <p className="text-sm text-muted-foreground">
+            Prefer email? Reach us at{" "}
+            <a
+              href={`mailto:${siteConfig.supportEmail}`}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {siteConfig.supportEmail}
+            </a>
+            .
+          </p>
         </div>
         <BookingForm />
       </div>

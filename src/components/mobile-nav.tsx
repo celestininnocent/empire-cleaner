@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Phone } from "lucide-react";
+import { Mail, Menu, Phone } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { buttonVariants } from "@/components/ui/button";
@@ -69,6 +69,14 @@ export function MobileNav({
           >
             <Phone className="size-4 shrink-0" aria-hidden />
             {siteConfig.supportPhoneDisplay}
+          </a>
+          <a
+            href={`mailto:${siteConfig.supportEmail}`}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/30 px-3 py-3 text-sm font-semibold text-foreground hover:bg-muted/50"
+          >
+            <Mail className="size-4 shrink-0 text-primary" aria-hidden />
+            {siteConfig.supportEmail}
           </a>
           {signedIn ? (
             <SignOutButton
