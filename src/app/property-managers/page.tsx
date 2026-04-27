@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/site-shell";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PortfolioQuoteForm } from "@/components/property-managers/portfolio-quote-form";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -31,10 +32,6 @@ const points = [
     icon: FileSpreadsheet,
   },
 ];
-
-const portfolioMailto = `mailto:${siteConfig.partnershipsEmail}?subject=${encodeURIComponent("Portfolio quote — Empire Cleaner")}&body=${encodeURIComponent(
-  "Name:\nCompany:\n# of units / markets:\nDesired cadence:\nNotes:\n"
-)}`;
 
 export default function PropertyManagersPage() {
   return (
@@ -71,17 +68,13 @@ export default function PropertyManagersPage() {
             <CardHeader>
               <CardTitle className="text-lg">Next step</CardTitle>
               <CardDescription>
-                Start with a portfolio quote request — include unit count, markets, and desired cadence.
-                We’ll follow up by phone or email.
+                Start with a multi-unit portfolio request below. Include your unit count, markets, and
+                service cadence so we can scope correctly.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <a
-                href={portfolioMailto}
-                className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}
-              >
-                Email a portfolio quote request
-              </a>
+            <CardContent className="space-y-4">
+              <PortfolioQuoteForm />
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Link href="/book" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto")}>
                 Book a single turnover
               </Link>
@@ -91,6 +84,7 @@ export default function PropertyManagersPage() {
               >
                 Call {siteConfig.supportPhoneDisplay}
               </a>
+              </div>
             </CardContent>
           </Card>
         </div>
