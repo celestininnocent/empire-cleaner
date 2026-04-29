@@ -38,6 +38,11 @@ function serviceDb() {
   return sb;
 }
 
+function isInviteEmailRateLimited(errorMessage: string | null | undefined): boolean {
+  const msg = (errorMessage ?? "").toLowerCase();
+  return /email rate limit exceeded|over_email_send_rate_limit|rate limit|too many/i.test(msg);
+}
+
 async function requireAdmin() {
   const { user } = await requireAdminUser();
   return user;
@@ -276,6 +281,15 @@ export async function approveApplicantForCrewAction(
         crewTeamId: resolvedTeamId,
       };
     }
+    if (isInviteEmailRateLimited(invErr.message)) {
+      revalidatePath("/admin/hiring");
+      return {
+        mode: "invited",
+        message:
+          "Crew access was granted, but invite email is temporarily rate-limited. Ask them to sign up/sign in with this same email on /login, then they can open /crew.",
+        crewTeamId: resolvedTeamId,
+      };
+    }
     throw new Error(invErr.message);
   }
 
@@ -405,6 +419,15 @@ export async function approveApplicantAsOwnerAction(
           crewTeamId: null,
         };
       }
+    if (isInviteEmailRateLimited(invErr.message)) {
+      revalidatePath("/admin/hiring");
+      return {
+        mode: "invited",
+        message:
+          "Owner access was granted, but invite email is temporarily rate-limited. Ask them to sign up/sign in with this same email on /login, then they can open /admin.",
+        crewTeamId: null,
+      };
+    }
     throw new Error(invErr.message);
   }
 
