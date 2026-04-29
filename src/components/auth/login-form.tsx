@@ -29,6 +29,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [resetLoading, setResetLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [signupCooldownUntil, setSignupCooldownUntil] = useState<number>(0);
+  const [signinCooldownUntil, setSigninCooldownUntil] = useState<number>(0);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
 
   const redirect = redirectTo;
@@ -37,12 +38,17 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     Math.ceil((signupCooldownUntil - nowMs) / 1000)
   );
   const signupCoolingDown = signupCooldownSeconds > 0;
+  const signinCooldownSeconds = Math.max(
+    0,
+    Math.ceil((signinCooldownUntil - nowMs) / 1000)
+  );
+  const signinCoolingDown = signinCooldownSeconds > 0;
 
   useEffect(() => {
-    if (!signupCoolingDown) return;
+    if (!signupCoolingDown && !signinCoolingDown) return;
     const t = window.setInterval(() => setNowMs(Date.now()), 250);
     return () => window.clearInterval(t);
-  }, [signupCoolingDown]);
+  }, [signupCoolingDown, signinCoolingDown]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,6 +56,12 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     const n = raw ? Number(raw) : 0;
     if (Number.isFinite(n) && n > Date.now()) {
       setSignupCooldownUntil(n);
+      setNowMs(Date.now());
+    }
+    const rawSignIn = window.sessionStorage.getItem("signinCooldownUntilMs");
+    const nSignIn = rawSignIn ? Number(rawSignIn) : 0;
+    if (Number.isFinite(nSignIn) && nSignIn > Date.now()) {
+      setSigninCooldownUntil(nSignIn);
       setNowMs(Date.now());
     }
   }, []);
@@ -74,19 +86,44 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     return msg;
   }
 
+  function formatSignInError(error: { message: string; status?: number; code?: string }): string {
+    const msg = error.message ?? "";
+    const low = msg.toLowerCase();
+    const isRateLimited =
+      error.status === 429 ||
+      /too many|rate limit|security purposes|wait/i.test(low);
+    if (isRateLimited) {
+      return "Too many login attempts. Please wait about a minute, then try again or reset your password.";
+    }
+    return msg;
+  }
+
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
+    if (signinCoolingDown) {
+      setMessage(`Please wait ${signinCooldownSeconds}s before trying to sign in again.`);
+      return;
+    }
     setLoading(true);
     setMessage(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
+      const formatted = formatSignInError(error);
+      if (/too many|rate limit|security purposes|wait/i.test(formatted.toLowerCase())) {
+        const nextCooldown = Date.now() + 60_000;
+        setSigninCooldownUntil(nextCooldown);
+        setNowMs(Date.now());
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("signinCooldownUntilMs", String(nextCooldown));
+        }
+      }
       const dbSignupHint =
         /database error saving new user/i.test(error.message)
           ? " This usually means Supabase migrations are behind (run migrations including `017_signup_trigger_backfill_columns.sql`)."
           : "";
-      setMessage(`${error.message}${dbSignupHint}`);
+      setMessage(`${formatted}${dbSignupHint}`);
       return;
     }
     await syncProfilePhoneFromUserMetadata(supabase);
@@ -195,8 +232,14 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || resetLoading}>
-                {loading ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
+              <Button type="submit" className="w-full" disabled={loading || resetLoading || signinCoolingDown}>
+                {loading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : signinCoolingDown ? (
+                  `Wait ${signinCooldownSeconds}s`
+                ) : (
+                  "Sign in"
+                )}
               </Button>
               <Button
                 type="button"
