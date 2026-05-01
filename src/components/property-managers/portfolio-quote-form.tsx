@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
+import { calculateJobPriceCents, formatUsd } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 export function PortfolioQuoteForm() {
@@ -16,11 +17,29 @@ export function PortfolioQuoteForm() {
   const [cadence, setCadence] = useState("Turnovers + recurring common-area cleaning");
   const [notes, setNotes] = useState("");
 
+  const validUnits = Number.isFinite(Number(units)) && Number(units) > 0;
+  const unitN = validUnits ? Math.max(1, Math.min(500, Math.floor(Number(units)))) : 1;
+  /** Example: 2bd / 2ba / 1200 sq ft, residential standard — website calculator only. */
+  const ballparkWebsiteTotal = useMemo(() => {
+    return calculateJobPriceCents(
+      {
+        bedrooms: 2,
+        bathrooms: 2,
+        squareFootage: 1200,
+        propertyType: "residential",
+        serviceTier: "standard",
+        unitCount: unitN,
+      },
+      { maxUnits: 500 }
+    );
+  }, [unitN]);
+
   const mailtoHref = useMemo(() => {
     const body = [
       `Name: ${name.trim()}`,
       `Company: ${company.trim()}`,
       `Number of units: ${units.trim()}`,
+      `Website ballpark (2bd/2ba/1200 sq ft per unit, standard): ${formatUsd(ballparkWebsiteTotal)} for ${unitN} unit(s) before tax — indicative only`,
       `Markets / neighborhoods: ${markets.trim()}`,
       `Desired cadence: ${cadence.trim()}`,
       `Notes: ${notes.trim()}`,
@@ -28,9 +47,8 @@ export function PortfolioQuoteForm() {
     return `mailto:${siteConfig.partnershipsEmail}?subject=${encodeURIComponent(
       "Portfolio quote — Empire Cleaner"
     )}&body=${encodeURIComponent(body)}`;
-  }, [name, company, units, markets, cadence, notes]);
+  }, [name, company, units, markets, cadence, notes, ballparkWebsiteTotal, unitN]);
 
-  const validUnits = Number.isFinite(Number(units)) && Number(units) > 0;
   const canGenerate = Boolean(name.trim() && company.trim() && validUnits);
 
   return (
@@ -102,6 +120,16 @@ export function PortfolioQuoteForm() {
           maxLength={1000}
         />
       </div>
+
+      {validUnits ? (
+        <p className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          Website ballpark (example layout: 2 bed / 2 bath / 1,200 sq ft per unit, standard clean, no
+          add-ons):{" "}
+          <span className="font-medium text-foreground">{formatUsd(ballparkWebsiteTotal)}</span> for{" "}
+          {unitN} unit{unitN === 1 ? "" : "s"} before tax — not a binding quote; we&apos;ll confirm scope
+          by email.
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <a

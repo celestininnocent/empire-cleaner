@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe, getStripeEnvStatus } from "@/lib/stripe";
-import { calculateJobPriceCents } from "@/lib/pricing";
+import { calculateJobPriceCents, calculatePerUnitJobPriceCents } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import { siteConfig } from "@/config/site";
 import { getPropertyTypeLabel } from "@/lib/property-types";
@@ -46,6 +46,15 @@ export async function POST(request: Request) {
     const referrerHost = getReferrerHost(attribution.referrerUrl);
     const userAgent = (request.headers.get("user-agent") ?? "").slice(0, 500);
 
+    const unitCount = body.unitCount;
+    const perUnitCents = calculatePerUnitJobPriceCents({
+      bedrooms: body.bedrooms,
+      bathrooms: body.bathrooms,
+      squareFootage: body.squareFootage,
+      propertyType: body.propertyType,
+      serviceTier: body.serviceTier,
+      addOnIds: body.addOnIds,
+    });
     const priceCents = calculateJobPriceCents({
       bedrooms: body.bedrooms,
       bathrooms: body.bathrooms,
@@ -53,6 +62,7 @@ export async function POST(request: Request) {
       propertyType: body.propertyType,
       serviceTier: body.serviceTier,
       addOnIds: body.addOnIds,
+      unitCount,
     });
 
     if (!Number.isFinite(priceCents) || priceCents < 50) {
@@ -100,7 +110,8 @@ export async function POST(request: Request) {
 
     const typeLabel = getPropertyTypeLabel(body.propertyType);
     const tierShort = getServiceTierShortLabel(body.serviceTier);
-    const stripeDesc = `${tierShort} · ${typeLabel} · ${body.bedrooms} bed / ${body.bathrooms} bath · ${body.squareFootage} sq ft`;
+    const unitSuffix = unitCount > 1 ? ` · ${unitCount} units` : "";
+    const stripeDesc = `${tierShort} · ${typeLabel} · ${body.bedrooms} bed / ${body.bathrooms} bath · ${body.squareFootage} sq ft${unitSuffix}`;
     const addOnsSummary = body.addOnIds.length
       ? ` · Add-ons: ${body.addOnIds.map((id) => getAddOnLabel(id)).join(", ")}`
       : "";
@@ -124,6 +135,8 @@ export async function POST(request: Request) {
       zip: body.zip,
       scheduled_start: body.scheduledStart,
       price_cents: String(priceCents),
+      per_unit_price_cents: String(perUnitCents),
+      unit_count: String(unitCount),
       booking_type: bookingType,
       customer_notes: body.customerNotes || "",
       add_on_ids: body.addOnIds.join(","),
@@ -163,9 +176,9 @@ export async function POST(request: Request) {
                 name: `${siteConfig.businessName} — One-time · ${tierShort} (${typeLabel})`,
                 description: `${stripeDesc}${addOnsSummary}`.slice(0, 500),
               },
-              unit_amount: priceCents,
+              unit_amount: perUnitCents,
             },
-            quantity: 1,
+            quantity: unitCount,
           },
         ],
       });
@@ -201,10 +214,10 @@ export async function POST(request: Request) {
               name: `${siteConfig.businessName} — ${siteConfig.stripeProductLine} · ${tierShort} (${typeLabel})`,
               description: `${stripeDesc}${addOnsSummary}`.slice(0, 500),
             },
-            unit_amount: priceCents,
+            unit_amount: perUnitCents,
             recurring: intervalMap[frequency],
           },
-          quantity: 1,
+          quantity: unitCount,
         },
       ],
     });

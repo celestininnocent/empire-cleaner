@@ -38,9 +38,16 @@ export type BookingInput = {
   serviceTier?: ServiceTierId | string;
   /** Optional upsells/add-ons selected at booking */
   addOnIds?: AddOnId[];
+  /**
+   * Same quote × N (e.g. identical units). Defaults to 1; clamped 1–100 in calculations.
+   * For Stripe, prefer one line item with `quantity: unitCount` and `unit_amount` from
+   * `calculatePerUnitJobPriceCents` so receipts show quantity clearly.
+   */
+  unitCount?: number;
 };
 
-export function calculateJobPriceCents(input: BookingInput): number {
+/** Price for a single unit (beds/baths/sqft/tier/add-ons). Use `unitCount` only for totals elsewhere. */
+export function calculatePerUnitJobPriceCents(input: BookingInput): number {
   const beds = Math.max(0, Math.min(10, Math.floor(input.bedrooms)));
   const baths = Math.max(1, Math.min(10, Math.floor(input.bathrooms)));
   const sqft = Math.max(500, Math.min(20000, Math.floor(input.squareFootage)));
@@ -61,6 +68,23 @@ export function calculateJobPriceCents(input: BookingInput): number {
   const scaled = Math.round(base * propertyMult * tierMult);
   const addOns = getAddOnsTotalCents(input.addOnIds ?? []);
   return scaled + addOns;
+}
+
+export function clampBookingUnitCount(raw: number | undefined, maxUnits = 100): number {
+  const cap = Math.max(1, Math.floor(maxUnits));
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(cap, n));
+}
+
+/** Full total: per-unit price × unit count (checkout caps at 100 units; use `maxUnits` for ballpark tools). */
+export function calculateJobPriceCents(
+  input: BookingInput,
+  options?: { maxUnits?: number }
+): number {
+  const cap = options?.maxUnits ?? 100;
+  const units = clampBookingUnitCount(input.unitCount, cap);
+  return calculatePerUnitJobPriceCents(input) * units;
 }
 
 export function formatUsd(cents: number): string {

@@ -29,6 +29,8 @@ export type CheckoutBody = {
   customerEmail: string;
   customerPhone: string;
   customerFullName: string;
+  /** Identical units / visits in one checkout (1–100). */
+  unitCount: number;
   attribution: AttributionPayload;
 };
 
@@ -75,6 +77,15 @@ export function parseCheckoutBody(json: unknown): { ok: true; body: CheckoutBody
   }
   if (!Number.isFinite(squareFootage) || !Number.isInteger(squareFootage) || squareFootage < 500 || squareFootage > 20000) {
     return { ok: false, error: "squareFootage must be an integer from 500 to 20000." };
+  }
+
+  let unitCount = 1;
+  if (o.unitCount !== undefined && o.unitCount !== null && o.unitCount !== "") {
+    const u = Number(o.unitCount);
+    if (!Number.isFinite(u) || !Number.isInteger(u) || u < 1 || u > 100) {
+      return { ok: false, error: "unitCount must be an integer from 1 to 100." };
+    }
+    unitCount = u;
   }
 
   if (!isNonEmptyString(o.addressLine, 300)) {
@@ -174,6 +185,7 @@ export function parseCheckoutBody(json: unknown): { ok: true; body: CheckoutBody
       customerEmail: emailRaw,
       customerPhone: phoneRaw,
       customerFullName: nameRaw,
+      unitCount,
       attribution,
     },
   };

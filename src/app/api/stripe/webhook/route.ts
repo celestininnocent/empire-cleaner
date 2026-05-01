@@ -337,6 +337,9 @@ export async function POST(request: Request) {
       : new Date().toISOString();
     const addOnIds = normalizeAddOnIds((meta.add_on_ids ?? "").split(","));
 
+    const unitCount =
+      Math.max(1, Math.min(100, parseInt(String(meta.unit_count ?? "1"), 10) || 1));
+
     const { data: job, error: jobErr } = await admin
       .from("jobs")
       .insert({
@@ -345,6 +348,7 @@ export async function POST(request: Request) {
         status: team ? "assigned" : "scheduled",
         scheduled_start: scheduledStart,
         price_cents: priceCents,
+        unit_count: unitCount,
         bedrooms: parseInt(meta.bedrooms ?? "2", 10),
         bathrooms: parseInt(meta.bathrooms ?? "2", 10),
         square_footage: parseInt(meta.square_footage ?? "1500", 10),

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Building2, Calendar, Check, Loader2, Ruler } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { calculateJobPriceCents, formatUsd } from "@/lib/pricing";
+import { calculatePerUnitJobPriceCents, clampBookingUnitCount, formatUsd } from "@/lib/pricing";
 import { PROPERTY_TYPES, type PropertyTypeId } from "@/lib/property-types";
 import { SERVICE_TIERS, type ServiceTierId } from "@/lib/service-tiers";
 import { ADD_ONS, getAddOnsTotalCents, type AddOnId } from "@/lib/add-ons";
@@ -54,6 +54,7 @@ export function BookingForm() {
   const [bedrooms, setBedrooms] = useState("3");
   const [bathrooms, setBathrooms] = useState("2");
   const [sqft, setSqft] = useState("1800");
+  const [unitCount, setUnitCount] = useState("1");
   const [addressLine, setAddressLine] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("OR");
@@ -149,8 +150,10 @@ export function BookingForm() {
     setAttribution(firstTouch);
   }, []);
 
-  const priceCents = useMemo(() => {
-    return calculateJobPriceCents({
+  const unitsParsed = clampBookingUnitCount(Number(unitCount));
+
+  const perUnitCents = useMemo(() => {
+    return calculatePerUnitJobPriceCents({
       bedrooms: Number(bedrooms) || 0,
       bathrooms: Number(bathrooms) || 1,
       squareFootage: Number(sqft) || 1000,
@@ -159,6 +162,8 @@ export function BookingForm() {
       addOnIds,
     });
   }, [bedrooms, bathrooms, sqft, propertyType, serviceTier, addOnIds]);
+
+  const priceCents = perUnitCents * unitsParsed;
 
   const addOnTotalCents = useMemo(() => getAddOnsTotalCents(addOnIds), [addOnIds]);
 
@@ -195,6 +200,7 @@ export function BookingForm() {
           serviceTier,
           customerNotes,
           addOnIds,
+          unitCount: unitsParsed,
           customerEmail: customerEmail.trim(),
           customerPhone: customerPhone.trim(),
           customerFullName: customerFullName.trim(),
@@ -295,6 +301,22 @@ export function BookingForm() {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="unit-count">Units (same layout)</Label>
+              <Input
+                id="unit-count"
+                inputMode="numeric"
+                min={1}
+                max={100}
+                value={unitCount}
+                onChange={(e) => setUnitCount(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Multiply the quote for identical units (e.g. matching apartments in one building). Max
+                100 per checkout.
+              </p>
+            </div>
             <div className="sm:col-span-3">
               <details className="rounded-lg border border-border/70 bg-card/50 px-3 py-2.5">
                 <summary className="cursor-pointer text-sm font-medium text-foreground">
@@ -362,6 +384,11 @@ export function BookingForm() {
             <p className="text-4xl font-semibold tracking-tight text-primary">
               {formatUsd(priceCents)}
             </p>
+            {unitsParsed > 1 ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {unitsParsed} × {formatUsd(perUnitCents)} per unit
+              </p>
+            ) : null}
             <p className="mt-2 text-xs text-muted-foreground">{siteConfig.bookingPriceHint}</p>
             {addOnIds.length ? (
               <p className="mt-2 text-xs text-muted-foreground">
