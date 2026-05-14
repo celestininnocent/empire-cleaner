@@ -33,13 +33,16 @@ export async function SiteShell({
   return (
     <div className="flex min-h-full flex-col">
       <SetupBanner />
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-primary">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 shadow-[0_1px_0_0_rgba(15,23,42,0.04)] backdrop-blur-md supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6">
+          <Link
+            href="/"
+            className="flex min-w-0 shrink items-center gap-2 font-semibold tracking-tight text-primary"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/20">
               <Sparkles className="size-4" aria-hidden />
             </span>
-            <span className="hidden sm:inline">{siteConfig.businessName}</span>
+            <span className="truncate text-[15px] sm:text-base">{siteConfig.businessName}</span>
           </Link>
           <nav
             className="hidden flex-1 flex-wrap items-center justify-center gap-x-0 gap-y-1 md:flex"
@@ -73,56 +76,61 @@ export async function SiteShell({
           </div>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
-      <footer className="border-t border-border/80 py-10 text-center text-sm text-muted-foreground">
-        <p>
-          <span className="font-medium text-foreground">{siteConfig.businessName}</span>
-          <span className="text-muted-foreground"> · {siteConfig.footer}</span>
-        </p>
-        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <Link href="/terms" className="font-medium text-primary underline-offset-4 hover:underline">
-            {siteConfig.legalTermsLink}
-          </Link>
-          <span className="text-border" aria-hidden>
-            ·
-          </span>
-          <Link href="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
-            {siteConfig.legalPrivacyLink}
-          </Link>
-          <span className="text-border" aria-hidden>
-            ·
-          </span>
-          <a
-            href={`tel:${siteConfig.supportPhoneTel}`}
-            className="font-medium text-primary underline-offset-4 hover:underline"
+      <main className="min-w-0 flex-1">{children}</main>
+      <footer className="border-t border-border/80 bg-muted/20 py-10 text-sm text-muted-foreground">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <p className="text-center leading-relaxed">
+            <span className="font-medium text-foreground">{siteConfig.businessName}</span>
+            <span className="text-muted-foreground"> · {siteConfig.footer}</span>
+          </p>
+          <nav
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 leading-relaxed"
+            aria-label="Footer"
           >
-            {siteConfig.supportPhoneDisplay}
-          </a>
-          <span className="text-border" aria-hidden>
-            ·
-          </span>
-          <a
-            href={`mailto:${siteConfig.supportEmail}`}
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            {siteConfig.supportEmail}
-          </a>
-          <span className="text-border" aria-hidden>
-            ·
-          </span>
-          <Link href="/hosts" className="font-medium text-primary underline-offset-4 hover:underline">
-            Hosts &amp; STR
-          </Link>
-          <span className="text-border" aria-hidden>
-            ·
-          </span>
-          <Link
-            href="/property-managers"
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            Property managers
-          </Link>
-        </p>
+            <Link href="/terms" className="font-medium text-primary underline-offset-4 hover:underline">
+              {siteConfig.legalTermsLink}
+            </Link>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <Link href="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
+              {siteConfig.legalPrivacyLink}
+            </Link>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <a
+              href={`tel:${siteConfig.supportPhoneTel}`}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {siteConfig.supportPhoneDisplay}
+            </a>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <a
+              href={`mailto:${siteConfig.supportEmail}`}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {siteConfig.supportEmail}
+            </a>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <Link href="/hosts" className="font-medium text-primary underline-offset-4 hover:underline">
+              Hosts &amp; STR
+            </Link>
+            <span className="text-border" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/property-managers"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Property managers
+            </Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );
